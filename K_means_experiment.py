@@ -3,60 +3,58 @@ from sklearn.cluster import KMeans
 import utils_
 
 
-def validate_distance(coordinate_1, coordinate_2, max_distance):
-    delta_x = np.abs(coordinate_1[0] - coordinate_2[0])
-    delta_y = np.abs(coordinate_1[1] - coordinate_2[1])
+def validate_distance(center_coordinate, municipality_coordinate, max_distance):
+    delta_x = np.abs(center_coordinate[0] - municipality_coordinate[1])
+    delta_y = np.abs(center_coordinate[1] - municipality_coordinate[2])
     return (delta_x + delta_y) <= max_distance
+
+
+def neighborhood_validation(circonscription, municipality_coordinate, distance):
+    for i in circonscription:
+        if not validate_distance(i, municipality_coordinate, distance):
+            return False
+    return True
 
 
 x = np.arange(6)
 y = np.arange(6)
 nb_of_municipalites = len(x) * len(y)
 nb_circonscription = 7
-min_municipalite_in_circonscription = int(np.floor(nb_of_municipalites / nb_circonscription))
-max_municipalite_in_circonscription = int(np.ceil(nb_of_municipalites / nb_circonscription))
+min_municipalities_in_circonscription = int(np.floor(nb_of_municipalites / nb_circonscription))
+max_municipalities_in_circonscription = int(np.ceil(nb_of_municipalites / nb_circonscription))
 max_distance = np.ceil(nb_of_municipalites / (2 * nb_circonscription))
-map = np.zeros((len(x), len(y)))
-
 XX, YY = np.meshgrid(x, y)
 municipalities_coordinate = np.column_stack((XX.ravel(), YY.ravel()))
 municipalities_priority_matrix = utils_.priority_matrix(len(x), len(y), municipalities_coordinate, max_distance)
 municipalities_priority_and_gps = sorted(utils_.custom_convert_matrix_to_list(municipalities_priority_matrix), key= lambda x: x[0])
 kmeans = KMeans(n_clusters=nb_circonscription, random_state=0).fit(municipalities_coordinate)
-circonscriptions = [[False] for i in range(nb_circonscription)]
 map = np.zeros((len(x), len(y)))
-number_min_municipalities_to_place = nb_circonscription * min_municipalite_in_circonscription
+
+circonscription = [[] for i in range(nb_circonscription)]
+number_min_municipalities_to_place = nb_circonscription * min_municipalities_in_circonscription
+total_nb_place_municipalities = 0
+break_condition = False
+while not break_condition:
+    nb_of_placed_municipalities = 0
+    for i in range(nb_circonscription):
+        for j in range(len(municipalities_priority_and_gps)):
+            center_coordinate = kmeans.cluster_centers_[i]
+            municipality_coordinate = municipalities_priority_and_gps[j]
+            print(map)
+            if validate_distance(center_coordinate, municipality_coordinate, max_distance) and neighborhood_validation(circonscription[i], municipality_coordinate, max_distance):
+                map[municipality_coordinate[1], municipality_coordinate[2]] = i + 1
+                municipalities_priority_and_gps.pop(j)
+                circonscription[i].append((municipality_coordinate[1], municipality_coordinate[2]))
+                nb_of_placed_municipalities += 1
+                total_nb_place_municipalities += 1
+                break
+    print(number_min_municipalities_to_place)
+    print(total_nb_place_municipalities)
+
+    break_condition = nb_of_placed_municipalities < nb_circonscription or total_nb_place_municipalities == number_min_municipalities_to_place
 
 
-
-
-
-
-
-
-
-
-
-
-
-# break_condition = False
-# while not break_condition:
-#     nb_of_placed_municipalities = 0
-#     for i in range(len(circonscriptions)):
-#         for j in range(len(municipalities_priority_and_gps)):
-#             center_coordinate = kmeans.cluster_centers_[i]
-#             municipality_coordinate = municipalities_priority_and_gps[j]
-#             if validate_distance(center_coordinate, municipality_coordinate, max_distance) and not circonscriptions[i][0]:
-#                 map[municipality_coordinate[1], municipality_coordinate[2]] = i + 1
-#                 municipalities_priority_and_gps.pop(j)
-#                 nb_of_placed_municipalities += 1
-#                 if len(circonscriptions[i]) == min_municipalite_in_circonscription:
-#                     circonscriptions[i][0] = True
-#                 break
-#     break_condition = nb_of_placed_municipalities < nb_circonscription
-
-
-
+print(map)
 
 
 
