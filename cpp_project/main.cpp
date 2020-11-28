@@ -75,7 +75,23 @@ struct State {
             districts[district].municipalities.push_back(itr);
         }
         Setup_Coadjacency();
+        initialize_state_cost();
     };
+
+    void initialize_state_cost() {
+        for(auto district: this->districts){
+            for(auto municipality_1: district.municipalities){
+                for(auto municipality_2: district.municipalities){
+                    int distance = this->coadjacency_matrix[municipality_1.x * this->nb_rows + municipality_1.y][municipality_2.x * this->nb_rows + municipality_2.y];
+                    if(distance > district.vote_cost)
+                        district.vote_cost = distance;
+                }
+
+            }
+        this->distance_cost += district.vote_cost;
+        }
+
+    }
 
     void Setup_Coadjacency() {
         coadjacency_matrix = new int*[nb_municipalities];
@@ -150,10 +166,12 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
     return state.distance_cost;
 }
 
+
+
 int main() {
 
-    int nb_row = 3;
-    int nb_col = 3;
+    int nb_row = 4;
+    int nb_col = 4;
     int nb_municipalities = nb_col * nb_row;
     int nb_district = 2;
     int min_municipalities_per_district = floor((float)nb_municipalities / (float)nb_district);
@@ -184,7 +202,6 @@ int main() {
     for(const auto &itr: test_state_1.districts){
         assert(itr.municipalities.size() == min_municipalities_per_district || itr.municipalities.size() == max_municipalities_per_district);
     }
-    cout << "";
     cout <<test_state_1.distance_cost << endl;
     ShowState(test_state_1);
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
