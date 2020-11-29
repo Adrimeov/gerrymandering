@@ -8,6 +8,10 @@
 #include <random>
 #include <tuple>
 
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+namespace py = pybind11;
 using namespace std;
 
 struct Municipality {
@@ -22,6 +26,14 @@ struct Municipality {
         votes = municipality_to_copy.votes;
     }
     Municipality(int _x, int _y, int _votes): x(_x), y(_y), votes(_votes), coadjacency_index(0) {};
+
+    int get_x() { return x; }
+    int get_y() { return y; }
+    int get_votes() { return votes; }
+
+    void set_x(int value) { x = value; }
+    void set_y(int value) { y = value; }
+    void set_votes(int value) { votes = value; }
 };
 
 struct District {
@@ -222,51 +234,16 @@ State Valid_State_Local_Search(const vector<Municipality> &municipalities_, int 
     return best_state;
 }
 
-int main() {
+PYBIND11_MODULE(CppLib, m) {
 
-    int nb_row = 10;
-    int nb_col = 10;
-    int nb_municipalities = nb_col * nb_row;
-    int nb_district = 5;
-    int min_municipalities_per_district = floor((float)nb_municipalities / (float)nb_district);
-    int max_municipalities_per_district = ceil((float)nb_municipalities / (float)nb_district);
+    py::class_<Municipality>(m, "Municipality")
+            .def(py::init<int, int, int>())
+            .def("get_x", &Municipality::get_x)
+            .def("get_y", &Municipality::get_y)
+            .def("get_votes", &Municipality::get_votes)
+            .def("set_x", &Municipality::set_x)
+            .def("set_y", &Municipality::set_y)
+            .def("set_votes", &Municipality::set_votes);
 
-    vector<Municipality> municipalities_1;
-
-    for (int i = 0; i < nb_row; i++) {
-        for (int j = 0; j < nb_col; j++) {
-            municipalities_1.emplace_back(i, j, 100);
-        }
-    }
-
-    assert(municipalities_1.size() == nb_col * nb_row);
-    assert(municipalities_1[0].x == 0);
-    assert(municipalities_1[1].y == 1);
-    assert(municipalities_1[0].votes == 100);
-
-    State test_state_1 = State(municipalities_1, nb_row, nb_col, nb_district);
-    assert(test_state_1.nb_municipalities == nb_col * nb_row);
-
-//    for (int i = 0; i < test_state_1.nb_municipalities; i++) {
-//        for (int j = 0; j < test_state_1.nb_municipalities; j++)
-//            cout << test_state_1.coadjacency_matrix[i][j] << " ";
-//        cout << endl;
-//    }
-
-    for(const auto &itr: test_state_1.districts){
-        assert(itr.municipalities.size() == min_municipalities_per_district || itr.municipalities.size() == max_municipalities_per_district);
-    }
-
-    State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
-    tuple<int, int> indexes = find_random_district_swap(new_state);
-    assert(get<0>(indexes) < new_state.nb_districts && get<0>(indexes) >= 0);
-    assert(get<1>(indexes) < new_state.districts[get<0>(indexes)].municipalities.size() && get<1>(indexes) >= 0);
-
-    // Search test
-    State best_state = Valid_State_Local_Search(municipalities_1, nb_row, nb_col, nb_district);
-
-    cout << best_state.distance_cost << endl;
-    ShowState(best_state);
-
-    return 0;
+    m.def("Valid_State_Local_Search", &Valid_State_Local_Search, "Builds a valid state using local search.");
 }

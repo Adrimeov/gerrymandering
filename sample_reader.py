@@ -1,5 +1,5 @@
 import numpy as np
-from cpp_project import Municipality
+from cpp_project import CppLib
 
 DATA_DIR = "./exemplaires"
 
@@ -14,7 +14,7 @@ def read_samples(path):
             line = line.replace("\n", "")
             row = np.array([int(i) for i in line.split()])
 
-            row_municipalities = [Municipality.Municipality(j, i, votes)
+            row_municipalities = [CppLib.Municipality(j, i, votes)
                                   for j, votes in enumerate(row)]
 
             municipalities = np.concatenate((municipalities, row_municipalities))

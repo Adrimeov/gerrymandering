@@ -23,7 +23,6 @@ struct Municipality {
     void set_x(int value) { x = value; }
     void set_y(int value) { y = value; }
     void set_votes(int value) { votes = value; }
-
 };
 
 PYBIND11_MODULE(Municipality, m) {
