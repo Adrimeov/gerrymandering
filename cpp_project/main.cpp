@@ -202,6 +202,26 @@ State Search_new_state(const State &current_state, int district_index, int munic
     return best_state;
 }
 
+State Valid_State_Local_Search(const State &initial_sate) {
+    State current_state(initial_sate);
+    State best_state(current_state);
+    int max_non_improving_iterations = 10000;
+    int non_improving_iterations = 0;
+
+    while (non_improving_iterations < max_non_improving_iterations){
+        non_improving_iterations++;
+        tuple<int, int> random_indexes = find_random_district_swap(current_state);
+        current_state = Search_new_state(current_state, get<0>(random_indexes), get<1>(random_indexes));
+
+        if (current_state.distance_cost < best_state.distance_cost) {
+            best_state = current_state;
+            non_improving_iterations = 0;
+        }
+    }
+
+    return best_state;
+}
+
 int main() {
 
     int nb_row = 10;
@@ -236,32 +256,17 @@ int main() {
     for(const auto &itr: test_state_1.districts){
         assert(itr.municipalities.size() == min_municipalities_per_district || itr.municipalities.size() == max_municipalities_per_district);
     }
-//    cout <<test_state_1.distance_cost << endl;
-//    ShowState(test_state_1);
-//    assert(test_state_1.distance_cost == 12);
+
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
-    int new_cost = apply_new_cost_after_swap(new_state, 0, 1, 0, 0);
-//    assert(new_cost == 10);
     tuple<int, int> indexes = find_random_district_swap(new_state);
     assert(get<0>(indexes) < new_state.nb_districts && get<0>(indexes) >= 0);
     assert(get<1>(indexes) < new_state.districts[get<0>(indexes)].municipalities.size() && get<1>(indexes) >= 0);
 
     // Search test
+    State best_state = Valid_State_Local_Search(test_state_1);
 
-    State best_state(test_state_1);
-
-    State true_best(test_state_1);
-
-    for(int i = 0; i < 5000; i++) {
-        tuple<int, int> random_indexes = find_random_district_swap(test_state_1);
-        best_state = Search_new_state(best_state, get<0>(random_indexes), get<1>(random_indexes));
-
-        if (best_state.distance_cost < true_best.distance_cost)
-            true_best = best_state;
-    }
-
-    cout << true_best.distance_cost << endl;
-    ShowState(true_best);
+    cout << best_state.distance_cost << endl;
+    ShowState(best_state);
 
     return 0;
 }
