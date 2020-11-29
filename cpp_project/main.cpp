@@ -79,16 +79,16 @@ struct State {
     };
 
     void initialize_state_cost() {
-        for(auto district: this->districts){
-            for(auto municipality_1: district.municipalities){
-                for(auto municipality_2: district.municipalities){
+        for(auto district =  this->districts.begin(); district != this->districts.end(); district++){
+            for(auto &municipality_1: district->municipalities){
+                for(auto &municipality_2: district->municipalities){
                     int distance = this->coadjacency_matrix[municipality_1.x * this->nb_rows + municipality_1.y][municipality_2.x * this->nb_rows + municipality_2.y];
-                    if(distance > district.vote_cost)
-                        district.vote_cost = distance;
+                    if(distance > district->distance_max)
+                        district->distance_max = distance;
                 }
 
             }
-        this->distance_cost += district.vote_cost;
+        this->distance_cost += district->distance_max;
         }
 
     }
@@ -127,7 +127,7 @@ void ShowState(const State &state) {
 
 }
 
-State swap_municipalities(const State current_state, int dist_idx_1, int dist_idx_2, int mun_idx_1, int mun_idx_2){
+State swap_municipalities(State current_state, int dist_idx_1, int dist_idx_2, int mun_idx_1, int mun_idx_2){
     State new_state = State(current_state);
     // TODO essayer de swap les ref, pas les objets.
     Municipality municipality_tempo = new_state.districts[dist_idx_1].municipalities[mun_idx_1];
@@ -170,10 +170,10 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
 
 int main() {
 
-    int nb_row = 4;
-    int nb_col = 4;
+    int nb_row = 3;
+    int nb_col = 3;
     int nb_municipalities = nb_col * nb_row;
-    int nb_district = 2;
+    int nb_district = 5;
     int min_municipalities_per_district = floor((float)nb_municipalities / (float)nb_district);
     int max_municipalities_per_district = ceil((float)nb_municipalities / (float)nb_district);
 
@@ -193,11 +193,11 @@ int main() {
     State test_state_1 = State(municipalities_1, nb_row, nb_col, nb_district);
     assert(test_state_1.nb_municipalities == nb_col * nb_row);
 
-    for (int i = 0; i < test_state_1.nb_municipalities; i++) {
-        for (int j = 0; j < test_state_1.nb_municipalities; j++)
-            cout << test_state_1.coadjacency_matrix[i][j] << " ";
-        cout << endl;
-    }
+//    for (int i = 0; i < test_state_1.nb_municipalities; i++) {
+//        for (int j = 0; j < test_state_1.nb_municipalities; j++)
+//            cout << test_state_1.coadjacency_matrix[i][j] << " ";
+//        cout << endl;
+//    }
 
     for(const auto &itr: test_state_1.districts){
         assert(itr.municipalities.size() == min_municipalities_per_district || itr.municipalities.size() == max_municipalities_per_district);
@@ -207,6 +207,9 @@ int main() {
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
     cout << apply_new_cost_after_swap(new_state, 0, 1, 0, 0) << endl;
     ShowState(new_state);
+
+
+
 
 //    State swap_municipalities(const State current_state, int dist_idx_1, int dist_idx_2, int mun_idx_1, int mun_idx_2){
 
