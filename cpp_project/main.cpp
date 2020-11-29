@@ -159,8 +159,7 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
             if(cost_between_mun > largest_distance)
                 largest_distance = cost_between_mun;
         }
-        if(largest_distance < district_to_evaluate->distance_max)
-            delta_distance_cost += largest_distance - district_to_evaluate->distance_max;
+        delta_distance_cost += largest_distance - district_to_evaluate->distance_max;
     }
 
     state.distance_cost += delta_distance_cost;
