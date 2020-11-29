@@ -144,7 +144,7 @@ State Search_new_state(const State &state, int district_index, int municipality_
 
     Municipality to_swap = state.districts[district_index].municipalities[municipality_index];
     State *best_state;
-    int best_state_cost = ;
+    int best_state_cost = 0;
 
     // TODO: changer state.districts.size() a state.nb_district quand JF va push
     for(int i = 0; i < state.districts.size(); i++) {
@@ -189,15 +189,14 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
 }
 
 tuple<int, int> find_random_district_swap(const State &state){
-//    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
-    int seed = 10;
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+//    int seed = 10;
     uniform_int_distribution<int> district_distribution(0,state.nb_districts - 1);
     default_random_engine generator (seed);
     int chosen_district = district_distribution(generator);
     uniform_int_distribution<int> municipalities_distribution(0,state.districts[chosen_district].municipalities.size() - 1);
-    int chosen_municipality = district_distribution(municipalities_distribution);
+    int chosen_municipality = municipalities_distribution(generator);
     return make_tuple(chosen_district, chosen_municipality);
-
 }
 
 
@@ -241,10 +240,9 @@ int main() {
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
     int new_cost = apply_new_cost_after_swap(new_state, 0, 1, 0, 0);
     assert(new_cost == 10);
-
-
-    cout << get<0>(find_random_district_swap(new_state));
-
+    tuple<int, int> tuple = find_random_district_swap(new_state);
+    assert(get<0>(tuple) < new_state.nb_districts && get<0>(tuple) >= 0);
+    assert(get<1>(tuple) < new_state.districts[get<0>(tuple)].municipalities.size() && get<1>(tuple) >= 0);
 
 
 
