@@ -79,18 +79,16 @@ struct State {
     };
 
     void initialize_state_cost() {
-        for(auto district =  this->districts.begin(); district != this->districts.end(); district++){
-            for(auto &municipality_1: district->municipalities){
-                for(auto &municipality_2: district->municipalities){
-                    int distance = this->coadjacency_matrix[municipality_1.x * this->nb_rows + municipality_1.y][municipality_2.x * this->nb_rows + municipality_2.y];
-                    if(distance > district->distance_max)
-                        district->distance_max = distance;
+        for(auto & district : this->districts){
+            for(int i = 0; i < district.municipalities.size() - 1; i++) {
+                for(int j = i + 1; j < district.municipalities.size(); j++) {
+                    int distance = this->coadjacency_matrix[district.municipalities[i].x * this->nb_rows + district.municipalities[i].y][district.municipalities[j].x * this->nb_rows + district.municipalities[j].y];
+                    if(distance > district.distance_max)
+                        district.distance_max = distance;
                 }
-
             }
-        this->distance_cost += district->distance_max;
+            this->distance_cost += district.distance_max;
         }
-
     }
 
     void Setup_Coadjacency() {
