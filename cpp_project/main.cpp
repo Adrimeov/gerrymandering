@@ -135,6 +135,27 @@ State swap_municipalities(State current_state, int dist_idx_1, int dist_idx_2, i
 
 }
 
+State Search_new_state(const State &state, int district_index, int municipality_index) {
+
+    Municipality to_swap = state.districts[district_index].municipalities[municipality_index];
+    State *best_state;
+    int best_state_cost = ;
+
+    // TODO: changer state.districts.size() a state.nb_district quand JF va push
+    for(int i = 0; i < state.districts.size(); i++) {
+        if(i == district_index) {
+            // Skipping swaps with municipaities from same district
+            continue;
+        }
+
+        for (int j = 0; j < state.districts[i].municipalities.size(); j++) {
+
+        }
+
+    }
+
+    return state;
+}
 
 int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx_2, int swap_mun_1_idx, int swap_mun_2_idx){
     assert(district_idx_1 != district_idx_2);
