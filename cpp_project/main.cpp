@@ -4,6 +4,8 @@
 #include "cassert"
 #include "math.h"
 #include <queue>
+#include <chrono>
+#include <random>
 
 using namespace std;
 
@@ -46,6 +48,7 @@ struct State {
     int nb_rows;
     int nb_cols;
     int nb_municipalities;
+    int nb_districts;
 
     State(const State &state_to_copy) {
         distance_cost = state_to_copy.distance_cost;
@@ -56,12 +59,14 @@ struct State {
         nb_municipalities = state_to_copy.nb_municipalities;
         nb_rows = state_to_copy.nb_rows;
         nb_cols = state_to_copy.nb_cols;
+        nb_districts = state_to_copy.nb_districts;
     }
 
     State(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district): nb_rows(rows), nb_cols(cols), distance_cost(0), vote_cost(0) {
         nb_municipalities = municipalities_.size();
         municipalities = municipalities_;
         districts = vector<District>(nb_district);
+        nb_districts = nb_district;
         // TODO: maybe shuffle les municipalites
 
         queue<int> fifo;
@@ -163,6 +168,17 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
     return state.distance_cost;
 }
 
+tuple<int, int> find_random_district_swap(const State &state){
+//    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    int seed = 10;
+    uniform_int_distribution<int> district_distribution(0,state.nb_districts - 1);
+    default_random_engine generator (seed);
+    int chosen_district = district_distribution(generator);
+    uniform_int_distribution<int> municipalities_distribution(0,state.districts[chosen_district].municipalities.size() - 1);
+    int chosen_municipality = district_distribution(municipalities_distribution);
+    return make_tuple(chosen_district, chosen_municipality);
+
+}
 
 
 int main() {
@@ -205,13 +221,16 @@ int main() {
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
     int new_cost = apply_new_cost_after_swap(new_state, 0, 1, 0, 0);
     assert(new_cost == 10);
-//    cout << new_cost << endl;
-//    ShowState(new_state);
+
+
+    cout << get<0>(find_random_district_swap(new_state));
 
 
 
 
-//    State swap_municipalities(const State current_state, int dist_idx_1, int dist_idx_2, int mun_idx_1, int mun_idx_2){
+
+
+
 
 
 }
