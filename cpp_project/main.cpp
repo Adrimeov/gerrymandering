@@ -155,7 +155,7 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
             if(cost_between_mun > largest_distance)
                 largest_distance = cost_between_mun;
         }
-        if(largest_distance > district_to_evaluate->distance_max)
+        if(largest_distance < district_to_evaluate->distance_max)
             district_to_evaluate->distance_max = largest_distance;
     }
     int new_state_cost = 0;
@@ -202,11 +202,14 @@ int main() {
     for(const auto &itr: test_state_1.districts){
         assert(itr.municipalities.size() == min_municipalities_per_district || itr.municipalities.size() == max_municipalities_per_district);
     }
-    cout <<test_state_1.distance_cost << endl;
-    ShowState(test_state_1);
+//    cout <<test_state_1.distance_cost << endl;
+//    ShowState(test_state_1);
+    assert(test_state_1.distance_cost == 12);
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
-    cout << apply_new_cost_after_swap(new_state, 0, 1, 0, 0) << endl;
-    ShowState(new_state);
+    int new_cost = apply_new_cost_after_swap(new_state, 0, 1, 0, 0);
+    assert(new_cost == 10);
+//    cout << new_cost << endl;
+//    ShowState(new_state);
 
 
 
