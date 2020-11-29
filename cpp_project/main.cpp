@@ -37,8 +37,8 @@ struct District {
 };
 
 struct State {
-    float distance_cost;
-    float vote_cost;
+    int distance_cost;
+    int vote_cost;
     vector<District> districts;
     // TODO: L'enlever de la??
     vector<Municipality> municipalities;
@@ -143,6 +143,7 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
 
     int swap_districts_idxs[2] {district_idx_1, district_idx_2};
     int swap_municipalities_idxs [2] {swap_mun_1_idx, swap_mun_2_idx};
+    int delta_distance_cost = 0;
 
     for(int district_idx = 0; district_idx < 2; district_idx++){
         District *district_to_evaluate = &state.districts[swap_districts_idxs[district_idx]];
@@ -156,13 +157,11 @@ int apply_new_cost_after_swap(State &state, int district_idx_1, int district_idx
                 largest_distance = cost_between_mun;
         }
         if(largest_distance < district_to_evaluate->distance_max)
-            district_to_evaluate->distance_max = largest_distance;
+            delta_distance_cost += largest_distance - district_to_evaluate->distance_max;
     }
-    int new_state_cost = 0;
-    for(int i = 0; i < state.districts.size(); i++){
-        new_state_cost += state.districts[i].distance_max;
-    }
-    state.distance_cost = new_state_cost;
+
+    state.distance_cost += delta_distance_cost;
+    // TODO: on a tu besoin de le retourner?
     return state.distance_cost;
 }
 
