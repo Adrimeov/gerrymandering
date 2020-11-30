@@ -45,7 +45,7 @@ struct District {
 };
 
 struct State {
-    int distance_cost;
+    float distance_cost;
     int vote_cost;
     vector<District> districts;
     // TODO: L'enlever de la??
@@ -110,8 +110,35 @@ struct State {
 
         }
     }
-
     void initialize_state_cost() {
+        for(auto & district : this->districts){
+            district._center_x = 0;
+            district._center_y = 0;
+            district.distance_cost = 0;
+            float municipality_size = district.municipalities.size();
+            for(int i = 0; i < municipality_size; i++){
+                district._center_x += district.municipalities[i].x;
+                district._center_y += district.municipalities[i].y;
+            }
+            district._center_x /= municipality_size;
+            district._center_y /= municipality_size;
+
+            float distance_max = 0;
+            for(int i = 0; i < district.municipalities.size(); i++){
+                float distance_x = abs(district.municipalities[i].x - district._center_x);
+                float distance_y = abs(district.municipalities[i].y - district._center_y);
+//                district.distance_cost += distance_x + distance_y;
+                if(distance_max < distance_x + distance_y){
+                    district.distance_cost =  pow((distance_x + distance_y), 2) / municipality_size;
+                    distance_max = distance_x + distance_y;
+                }
+            }
+            this->distance_cost += district.distance_cost;
+        }
+
+    }
+
+    void initialize_state_cost_1() {
         for(auto & district : this->districts){
             district._center_x = 0;
             district._center_y = 0;
@@ -177,6 +204,40 @@ State swap_municipalities(State current_state, int dist_idx_1, int dist_idx_2, i
 }
 
 int update_new_cost_after_swap(State &state, int district_idx_1, int district_idx_2, int mun_idx_1, int mun_idx_2){
+    assert(district_idx_1 != district_idx_2);
+    int indexes[2]{district_idx_1, district_idx_2};
+
+    for(int i = 0; i < 2; i++) {
+        if(state.distance_cost < state.districts[indexes[i]].distance_cost)
+            cout<<"allo"<< endl;
+        state.distance_cost -= state.districts[indexes[i]].distance_cost;
+        float distance_max = 0;
+        state.districts[indexes[i]]._center_x = 0;
+        state.districts[indexes[i]]._center_y = 0;
+        for(int j = 0; j < state.districts[indexes[i]].municipalities.size(); j ++){
+            state.districts[indexes[i]]._center_x += state.districts[indexes[i]].municipalities[j].x;
+            state.districts[indexes[i]]._center_y += state.districts[indexes[i]].municipalities[j].y;
+
+        }
+        state.districts[indexes[i]]._center_x /= state.districts[indexes[i]].municipalities.size();
+        state.districts[indexes[i]]._center_y /= state.districts[indexes[i]].municipalities.size();
+
+
+        for(int j = 0; j < state.districts[indexes[i]].municipalities.size(); j ++){
+            float distance_x = abs(state.districts[indexes[i]].municipalities[j].x - state.districts[indexes[i]]._center_x);
+            float distance_y = abs(state.districts[indexes[i]].municipalities[j].y - state.districts[indexes[i]]._center_y);
+//                district.distance_cost += distance_x + distance_y;
+            if(distance_max < distance_x + distance_y){
+                state.districts[indexes[i]].distance_cost =  pow((distance_x + distance_y), 2) / state.districts[indexes[i]].municipalities.size();
+                distance_max = distance_x + distance_y;
+            }
+        }
+        state.distance_cost += state.districts[indexes[i]].distance_cost;
+    }
+    return state.distance_cost;
+}
+
+int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_idx_2, int mun_idx_1, int mun_idx_2){
     assert(district_idx_1 != district_idx_2);
 
     District *district_1 = &state.districts[district_idx_1];
@@ -278,26 +339,6 @@ State Search_new_state(const State &current_state, int district_index, int munic
 
     return best_state;
 }
-State Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations,vector<vector<float>> centers, bool print_) {
-    State current_state(municipalities_, rows,cols, nb_district, centers);
-    State best_state(current_state);
-    int non_improving_iterations = 0;
-    int iteration_counter = 0;
-
-    while (non_improving_iterations < max_non_improving_iterations){
-        non_improving_iterations++;
-        tuple<int, int> random_indexes = find_district_swap(current_state, ++iteration_counter);
-        current_state = Search_new_state(current_state, get<0>(random_indexes), get<1>(random_indexes));
-
-        if (current_state.distance_cost < best_state.distance_cost) {
-            best_state = current_state;
-            non_improving_iterations = 0;
-            cout << best_state.distance_cost << endl;
-        }
-    }
-
-    return best_state;
-}
 
 bool validate_state(const State &state) {
     int distance_max = ceil((float)state.nb_municipalities / (2*(float)state.nb_districts));
@@ -315,6 +356,29 @@ bool validate_state(const State &state) {
     cout << "Valid!" << endl;
     return true;
 }
+
+State Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations,vector<vector<float>> centers, bool print_) {
+    State current_state(municipalities_, rows,cols, nb_district, centers);
+    State best_state(current_state);
+    int non_improving_iterations = 0;
+    int iteration_counter = 0;
+
+    while (non_improving_iterations < max_non_improving_iterations){
+        non_improving_iterations++;
+        tuple<int, int> random_indexes = find_district_swap(current_state, ++iteration_counter);
+        current_state = Search_new_state(current_state, get<0>(random_indexes), get<1>(random_indexes));
+
+        if (current_state.distance_cost < best_state.distance_cost) {
+            best_state = current_state;
+            non_improving_iterations = 0;
+            cout << best_state.distance_cost << endl;
+        }
+    }
+    validate_state(best_state);
+
+    return best_state;
+}
+
 
 int main() {
 
@@ -355,16 +419,16 @@ int main() {
     ShowState(test_state_1);
     cout << test_state_1.distance_cost << endl;
     tuple<int, int> to_swap = find_district_swap(test_state_1, 0);
-    cout<< get<0>(to_swap) << ":"<<get<1>(to_swap) << endl;
+//    cout<< get<0>(to_swap) << ":"<<get<1>(to_swap) << endl;
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
     tuple<int, int> indexes = find_district_swap(new_state, 0);
     assert(get<0>(indexes) < new_state.nb_districts && get<0>(indexes) >= 0);
     assert(get<1>(indexes) < new_state.districts[get<0>(indexes)].municipalities.size() && get<1>(indexes) >= 0);
 //    ShowState(new_state);
 
-//    State best_state = Valid_State_Local_Search(test_state_1, 100);
+    State best_state = Valid_State_Local_Search(test_state_1.municipalities, nb_row, nb_col, nb_district, 100, centers, false);
 //
-//    ShowState(best_state);
+    ShowState(best_state);
 //    cout << best_state.distance_cost << endl;
 
 //    bool found = false;
