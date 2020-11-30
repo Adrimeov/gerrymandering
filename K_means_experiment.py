@@ -1,66 +1,71 @@
 import numpy as np
 from sklearn.cluster import KMeans
-import utils_
+import time
+from cpp_project import CppLib
 
 
-def validate_distance(center_coordinate, municipality_coordinate, max_distance):
-    delta_x = np.abs(center_coordinate[0] - municipality_coordinate[1])
-    delta_y = np.abs(center_coordinate[1] - municipality_coordinate[2])
-    return (delta_x + delta_y) <= max_distance
+def compute_k_means_center(nb_row, nb_column, nb_district):
+    x = np.arange(nb_row)
+    y = np.arange(nb_column)
+    # nb_of_municipalites = len(x) * len(y)
+    nb_circonscription = nb_district
+    XX, YY = np.meshgrid(x, y)
+    municipalities_coordinate = np.column_stack((XX.ravel(), YY.ravel()))
+    kmeans = KMeans(n_clusters=nb_circonscription, random_state=0).fit(municipalities_coordinate)
+    return kmeans.cluster_centers_
 
 
-def neighborhood_validation(circonscription, municipality_coordinate, distance):
-    for i in circonscription:
-        if not validate_distance(i, municipality_coordinate, distance):
-            return False
-    return True
-
-
-x = np.arange(6)
-y = np.arange(6)
-nb_of_municipalites = len(x) * len(y)
-nb_circonscription = 7
-min_municipalities_in_circonscription = int(np.floor(nb_of_municipalites / nb_circonscription))
-max_municipalities_in_circonscription = int(np.ceil(nb_of_municipalites / nb_circonscription))
-max_distance = np.ceil(nb_of_municipalites / (2 * nb_circonscription))
-XX, YY = np.meshgrid(x, y)
-municipalities_coordinate = np.column_stack((XX.ravel(), YY.ravel()))
-municipalities_priority_matrix = utils_.priority_matrix(len(x), len(y), municipalities_coordinate, max_distance)
-municipalities_priority_and_gps = sorted(utils_.custom_convert_matrix_to_list(municipalities_priority_matrix), key= lambda x: x[0])
-kmeans = KMeans(n_clusters=nb_circonscription, random_state=0).fit(municipalities_coordinate)
-map = np.zeros((len(x), len(y)))
-
-circonscription = [[] for i in range(nb_circonscription)]
-number_min_municipalities_to_place = nb_circonscription * min_municipalities_in_circonscription
-total_nb_place_municipalities = 0
-break_condition = False
-while not break_condition:
-    nb_of_placed_municipalities = 0
-    for i in range(nb_circonscription):
-        for j in range(len(municipalities_priority_and_gps)):
-            center_coordinate = kmeans.cluster_centers_[i]
-            municipality_coordinate = municipalities_priority_and_gps[j]
-            print(map)
-            if validate_distance(center_coordinate, municipality_coordinate, max_distance) and neighborhood_validation(circonscription[i], municipality_coordinate, max_distance):
-                map[municipality_coordinate[1], municipality_coordinate[2]] = i + 1
-                municipalities_priority_and_gps.pop(j)
-                circonscription[i].append((municipality_coordinate[1], municipality_coordinate[2]))
-                nb_of_placed_municipalities += 1
-                total_nb_place_municipalities += 1
-                break
-    print(number_min_municipalities_to_place)
-    print(total_nb_place_municipalities)
-
-    break_condition = nb_of_placed_municipalities < nb_circonscription or total_nb_place_municipalities == number_min_municipalities_to_place
-
-
-print(map)
+if __name__ == "__main__":
+    start = time.time()
+    a = compute_k_means_center(4, 4, 2)
+    print(time.time() - start)
+    CppLib.test_initialize(a)
+    print(a)
 
 
 
 
 
 
+
+
+
+# municipalities_priority_matrix = utils_.priority_matrix(len(x), len(y), municipalities_coordinate, max_distance)
+# municipalities_priority_and_gps = sorted(utils_.custom_convert_matrix_to_list(municipalities_priority_matrix), key= lambda x: x[0])
+#
+# map = np.zeros((len(x), len(y)))
+#
+# circonscription = [[] for i in range(nb_circonscription)]
+# number_min_municipalities_to_place = nb_circonscription * min_municipalities_in_circonscription
+# total_nb_place_municipalities = 0
+# break_condition = False
+# while not break_condition:
+#     nb_of_placed_municipalities = 0
+#     for i in range(nb_circonscription):
+#         for j in range(len(municipalities_priority_and_gps)):
+#             center_coordinate = kmeans.cluster_centers_[i]
+#             municipality_coordinate = municipalities_priority_and_gps[j]
+#             print(map)
+#             if validate_distance(center_coordinate, municipality_coordinate, max_distance) and neighborhood_validation(circonscription[i], municipality_coordinate, max_distance):
+#                 map[municipality_coordinate[1], municipality_coordinate[2]] = i + 1
+#                 municipalities_priority_and_gps.pop(j)
+#                 circonscription[i].append((municipality_coordinate[1], municipality_coordinate[2]))
+#                 nb_of_placed_municipalities += 1
+#                 total_nb_place_municipalities += 1
+#                 break
+#     print(number_min_municipalities_to_place)
+#     print(total_nb_place_municipalities)
+#
+#     break_condition = nb_of_placed_municipalities < nb_circonscription or total_nb_place_municipalities == number_min_municipalities_to_place
+#
+#
+# print(map)
+#
+#
+#
+#
+#
+#
 
 
 

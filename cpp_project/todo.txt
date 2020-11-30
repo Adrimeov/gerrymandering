@@ -1,3 +1,4 @@
 ok 1) nouvelle metrique pour les district -> la somme des distances par rapport au centre du district
 2) on choisi le pire district basé sur cette dernière métrique.
 3) lorsque swap est fait on mets a jour la distance des deux district avec juste les municipalité swapper.
+4) envoyer les centre a c++; dispatcher les mun avec les bons district
