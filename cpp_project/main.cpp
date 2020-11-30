@@ -207,14 +207,27 @@ int update_new_cost_after_swap(State &state, int district_idx_1, int district_id
 //    return state.distance_cost;
 //}
 
-tuple<int, int> find_random_district_swap(const State &state){
-    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
-    uniform_int_distribution<int> district_distribution(0,state.nb_districts - 1);
-    default_random_engine generator (seed);
-    int chosen_district = district_distribution(generator);
-    uniform_int_distribution<int> municipalities_distribution(0,state.districts[chosen_district].municipalities.size() - 1);
-    int chosen_municipality = municipalities_distribution(generator);
-    return make_tuple(chosen_district, chosen_municipality);
+tuple<int, int> find_district_swap(const State &state) {
+    float worst_cost = 0;
+    float worst_district_index = 0;
+    for (int i = 0; i < state.districts.size(); i++) {
+        if (state.districts[i].distance_cost > worst_cost) {
+            worst_cost = state.districts[i].distance_cost;
+            worst_district_index = i;
+        }
+    }
+    worst_cost = 0;
+    float worst_mun_index = 0;
+    for(int i = 0; i < state.districts[worst_district_index].municipalities.size(); i++){
+        float distance_x = abs(state.districts[worst_district_index].municipalities[i].x - state.districts[worst_district_index]._center_x);
+        float distance_y = abs(state.districts[worst_district_index].municipalities[i].y - state.districts[worst_district_index]._center_y);
+        if(worst_cost < (distance_y + distance_x)) {
+            worst_cost = distance_x + distance_y;
+            worst_mun_index = i;
+        }
+
+    }
+    return make_tuple(worst_district_index, worst_mun_index);
 }
 
 State Search_new_state(const State &current_state, int district_index, int municipality_index) {
@@ -246,7 +259,7 @@ State Valid_State_Local_Search(const State &initial_sate, int max_non_improving_
 
     while (non_improving_iterations < max_non_improving_iterations){
         non_improving_iterations++;
-        tuple<int, int> random_indexes = find_random_district_swap(current_state);
+        tuple<int, int> random_indexes = find_district_swap(current_state);
         current_state = Search_new_state(current_state, get<0>(random_indexes), get<1>(random_indexes));
 
         if (current_state.distance_cost < best_state.distance_cost) {
@@ -313,13 +326,15 @@ int main() {
     }
     ShowState(test_state_1);
     cout << test_state_1.distance_cost << endl;
-
+    tuple<int, int> to_swap = find_district_swap(test_state_1);
+    cout<< get<0>(to_swap) << ":"<<get<1>(to_swap) << endl;
     State new_state = swap_municipalities(test_state_1, 0, 1, 0, 0);
-    tuple<int, int> indexes = find_random_district_swap(new_state);
+    tuple<int, int> indexes = find_district_swap(new_state);
     assert(get<0>(indexes) < new_state.nb_districts && get<0>(indexes) >= 0);
     assert(get<1>(indexes) < new_state.districts[get<0>(indexes)].municipalities.size() && get<1>(indexes) >= 0);
     ShowState(new_state);
-    cout << update_new_cost_after_swap(new_state, 0, 1) << endl;
+//    cout << update_new_cost_after_swap(new_state, 0, 1) << endl;
+
 
 
 
