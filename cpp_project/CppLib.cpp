@@ -193,22 +193,22 @@ State swap_municipalities(State current_state, int dist_idx_1, int dist_idx_2, i
     new_state.districts[dist_idx_2].municipalities[mun_idx_2] = municipality_tempo;
     return new_state;
 }
-int update_new_cost_after_swap(State &state, int district_idx_1, int district_idx_2, int mun_idx_1, int mun_idx_2){
+float update_new_cost_after_swap(State &state, int district_idx_1, int district_idx_2, int mun_idx_1, int mun_idx_2){
     assert(district_idx_1 != district_idx_2);
     int indexes[2]{district_idx_1, district_idx_2};
 
     for(int i = 0; i < 2; i++) {
         state.distance_cost -= state.districts[indexes[i]].distance_cost;
         float distance_max = 0;
-        state.districts[indexes[i]]._center_x = 0;
-        state.districts[indexes[i]]._center_y = 0;
-        for(int j = 0; j < state.districts[indexes[i]].municipalities.size(); j ++){
-            state.districts[indexes[i]]._center_x += state.districts[indexes[i]].municipalities[j].x;
-            state.districts[indexes[i]]._center_y += state.districts[indexes[i]].municipalities[j].y;
-
-        }
-        state.districts[indexes[i]]._center_x /= state.districts[indexes[i]].municipalities.size();
-        state.districts[indexes[i]]._center_y /= state.districts[indexes[i]].municipalities.size();
+//        state.districts[indexes[i]]._center_x = 0;
+//        state.districts[indexes[i]]._center_y = 0;
+//        for(int j = 0; j < state.districts[indexes[i]].municipalities.size(); j ++){
+//            state.districts[indexes[i]]._center_x += state.districts[indexes[i]].municipalities[j].x;
+//            state.districts[indexes[i]]._center_y += state.districts[indexes[i]].municipalities[j].y;
+//
+//        }
+//        state.districts[indexes[i]]._center_x /= state.districts[indexes[i]].municipalities.size();
+//        state.districts[indexes[i]]._center_y /= state.districts[indexes[i]].municipalities.size();
 
 
         for(int j = 0; j < state.districts[indexes[i]].municipalities.size(); j ++){
@@ -269,20 +269,20 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
 tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 
     // TODO: trouver une belle formule
-    float wildcard_probability = 0.5;
-
-    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
-    uniform_real_distribution<float> proba(0.0, 1.0);
-    default_random_engine generator(seed);
-
-    if (wildcard_probability > proba(generator))
-    {
-        uniform_int_distribution<int> district_distribution(0,state.nb_districts - 1);
-        int chosen_district = district_distribution(generator);
-        uniform_int_distribution<int> municipalities_distribution(0,state.districts[chosen_district].municipalities.size() - 1);
-        int chosen_municipality = municipalities_distribution(generator);
-        return make_tuple(chosen_district, chosen_municipality);
-    }
+//    float wildcard_probability = .1;
+//
+//    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+//    uniform_real_distribution<float> proba(0.0, 1.0);
+//    default_random_engine generator(seed);
+//
+//    if (wildcard_probability > proba(generator))
+//    {
+//        uniform_int_distribution<int> district_distribution(0,state.nb_districts - 1);
+//        int chosen_district = district_distribution(generator);
+//        uniform_int_distribution<int> municipalities_distribution(0,state.districts[chosen_district].municipalities.size() - 1);
+//        int chosen_municipality = municipalities_distribution(generator);
+//        return make_tuple(chosen_district, chosen_municipality);
+//    }
 
     float worst_cost = 0;
     float worst_district_index = 0;
@@ -303,6 +303,7 @@ tuple<int, int> find_district_swap(const State &state, int iteration_count) {
         }
 
     }
+    Municipality mun = state.districts[worst_district_index].municipalities[worst_mun_index];
     return make_tuple(worst_district_index, worst_mun_index);
 }
 
@@ -310,7 +311,7 @@ State Search_new_state(const State &current_state, int district_index, int munic
     State best_state(current_state);
     // TODO: tester avec et sans
     best_state.distance_cost = numeric_limits<int>::max();
-
+//    best_state.distance_cost = current_state.distance_cost;
     for(int i = 0; i < current_state.nb_districts; i++) {
         if(i == district_index) {
             // Skipping swaps with municipalities from same district
@@ -319,7 +320,7 @@ State Search_new_state(const State &current_state, int district_index, int munic
 
         for (int j = 0; j < current_state.districts[i].municipalities.size(); j++) {
             State candidate = swap_municipalities(current_state, district_index, i, municipality_index, j);
-            int candidate_cost = update_new_cost_after_swap(candidate, district_index, i, municipality_index, j);
+            float candidate_cost = update_new_cost_after_swap(candidate, district_index, i, municipality_index, j);
             if (candidate_cost < best_state.distance_cost)
                 best_state = candidate;
         }
@@ -328,17 +329,29 @@ State Search_new_state(const State &current_state, int district_index, int munic
 }
 
 bool validate_state(const State &state) {
-    int distance_max = ceil((float)state.nb_municipalities / (2*(float)state.nb_districts));
+    float distance_max = ceil((float)state.nb_municipalities / (2*(float)state.nb_districts));
+    int district_num = 0;
     for(auto & district : state.districts){
         for(int i = 0; i < district.municipalities.size() - 1; i++) {
             for(int j = i + 1; j < district.municipalities.size(); j++) {
-                int distance = state.coadjacency_matrix[district.municipalities[i].x * state.nb_rows + district.municipalities[i].y][district.municipalities[j].x * state.nb_rows + district.municipalities[j].y];
+                  int distance_x = abs(district.municipalities[i].x - district.municipalities[j].x);
+                  int distance_y = abs(district.municipalities[i].y - district.municipalities[j].y);
+                  int distance = distance_x + distance_y;
+//                int x = district.municipalities[i].x * state.nb_cols + district.municipalities[i].y;
+//                int y = district.municipalities[j].x * state.nb_cols + district.municipalities[j].y;
+//                int distance = state.coadjacency_matrix[x][y];
+
                 if(distance > distance_max) {
+                    cout << "distance:" << distance << "distance max"<< distance_max <<endl;
+                    cout << district.municipalities[i].x << " " << district.municipalities[i].y << endl;
+                    cout << district.municipalities[j].x << " " <<  district.municipalities[j].y << endl;
+                    cout << district_num << endl;
                     return false;
                 }
 
             }
         }
+        district_num+=1;
     }
     cout << "Valid!" << endl;
     return true;
@@ -354,6 +367,7 @@ float validation_treshold(const State &state){
 bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations, vector<vector<float>> centers,  bool print_) {
     State current_state(municipalities_, rows,cols, nb_district, centers);
     State best_state(current_state);
+    ShowState(current_state);
     float treshold = validation_treshold(best_state);
     int non_improving_iterations = 0;
     int iteration_counter = 0;
@@ -368,12 +382,13 @@ bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int r
             non_improving_iterations = 0;
             cout << "Treshold: "<< treshold << endl;
             cout << best_state.distance_cost << endl;
-            if(best_state.distance_cost <= treshold)
-                if(validate_state(best_state)) {
+            if(best_state.distance_cost <= treshold) {
+                cout << "validation in progress.." << endl;
+                if (validate_state(best_state)) {
                     ShowState(best_state);
                     return true;
                 }
-
+            }
         }
     }
 
