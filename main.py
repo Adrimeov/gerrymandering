@@ -3,6 +3,7 @@ import sys
 import sample_reader
 from cpp_project import CppLib
 import K_means_experiment as K_mean
+import numpy as np
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
         exit('Erreur: Pas assez d\'arguments.')
@@ -21,12 +22,13 @@ if __name__ == "__main__":
     nb_districts = int(parameters["nb_districts"])
     print_bool = bool(parameters["print"])
     max_improving = 100;
+
     x, y, municipalities = sample_reader.read_samples(samples_path)
-    print(x)
-    print(y)
-    centers = K_mean.compute_k_means_center(y, x, nb_districts)
+    centers = K_mean.compute_k_means_center(x, y, nb_districts)
+    centers = np.round(np.array(centers))
+
     # CppLib.test_initialize(municipalities, x, y, nb_districts, centers)
     valid = False
     while not valid:
-        valid =CppLib.Valid_State_Local_Search(municipalities, y, x, nb_districts,max_improving, centers, print_bool)
+        valid = CppLib.Valid_State_Local_Search(municipalities, x, y, nb_districts, max_improving, centers, print_bool)
 
