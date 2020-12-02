@@ -29,6 +29,5 @@ if __name__ == "__main__":
 
     # CppLib.test_initialize(municipalities, x, y, nb_districts, centers)
     valid = False
-    while not valid:
-        valid = CppLib.Valid_State_Local_Search(municipalities, x, y, nb_districts, max_improving, centers, print_bool)
+    valid = CppLib.Valid_State_Local_Search(municipalities, x, y, nb_districts, max_improving, centers, print_bool)
 

@@ -3,9 +3,7 @@
 #include "list"
 #include "cassert"
 #include <cmath>
-#include <queue>
 #include <chrono>
-#include <random>
 #include <tuple>
 
 using namespace std;
@@ -316,17 +314,33 @@ bool validate_state(const State &state) {
     return true;
 }
 
-float validation_treshold(const State &state){
-    float distance_max = ceil(state.nb_municipalities / (2*state.nb_districts));
-    float min_nb_mun_per_district = floor(state.nb_municipalities / state.nb_districts);
-    float division = pow(distance_max, 2) / min_nb_mun_per_district;
-    return division * state.nb_districts;
+float validation_threshold(const State &state){
+    float d_max = floor((float)state.nb_municipalities / (2*(float)state.nb_districts));
+    float nb_mun_min = floor((float)state.nb_municipalities / ((float)state.nb_districts));
+
+    if ((int)d_max % 2 == 1)
+        d_max++;
+
+    float r_max = d_max / 2;
+    float total_cost = 0;
+    float nb_add = 0;
+
+    while (r_max >= 1) {
+        float cost = pow(r_max, 2) / (r_max * 4);
+        total_cost += cost;
+        r_max--;
+        nb_add++;
+    }
+
+    total_cost /= nb_add;
+
+    return total_cost;
 }
 
 bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations, vector<vector<float>> centers,  bool print_) {
     State current_state(municipalities_, rows,cols, nb_district, centers);
     State best_state(current_state);
-    float treshold = validation_treshold(best_state);
+    float treshold = validation_threshold(best_state);
     int non_improving_iterations = 0;
     int iteration_counter = 0;
 
@@ -388,7 +402,11 @@ int main() {
 //    assert(municipalities_1[0].votes == 100);
 
     State test_state_1 = State(municipalities_1, nb_row, nb_col, nb_district, centers_10_10);
-    ShowState(test_state_1);
+//    ShowState(test_state_1);
+    vector<vector<float>> threshold_centers { vector<float>{8, 2}, vector<float>{4 , 7}, vector<float>{2, 2},vector<float>{8, 7}};
+    State threshold_state_test = State(municipalities_1, 8, 8, 4, threshold_centers);
+    float threshold = validation_threshold(test_state_1);
+    assert(threshold == 420.0);
 //    assert(test_state_1.nb_municipalities == nb_col * nb_row);
 
 //    for (int i = 0; i < test_state_1.nb_municipalities; i++) {

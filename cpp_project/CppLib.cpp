@@ -137,7 +137,7 @@ struct State {
             for(int i = 0; i < municipality_size; i++){
                 float distance_x = abs(district.municipalities[i].x - district._center_x);
                 float distance_y = abs(district.municipalities[i].y - district._center_y);
-                distance_tot += distance_x + distance_y;
+                distance_tot += pow(distance_x + distance_y, 2) / municipality_size;
             }
             district.distance_cost = distance_tot / municipality_size;
             this->distance_cost += district.distance_cost;
@@ -198,7 +198,7 @@ float update_new_cost_after_swap(State &state, int district_idx_1, int district_
         for(int j = 0; j < municipality_size; j ++){
             float distance_x = abs(state.districts[indexes[i]].municipalities[j].x - state.districts[indexes[i]]._center_x);
             float distance_y = abs(state.districts[indexes[i]].municipalities[j].y - state.districts[indexes[i]]._center_y);
-            distance_tot += distance_x + distance_y;
+            distance_tot += pow(distance_x + distance_y, 2) / municipality_size;
         }
         state.districts[indexes[i]].distance_cost = distance_tot / municipality_size;
         state.distance_cost += state.districts[indexes[i]].distance_cost;
@@ -249,7 +249,7 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
 
 tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 
-    float wildcard_probability = .1;
+    float wildcard_probability = 0.1;
 
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
     uniform_real_distribution<float> proba(0.0, 1.0);
@@ -337,7 +337,7 @@ bool validate_state(const State &state) {
     return true;
 }
 
-float validation_treshold(const State &state){
+float validation_threshold(const State &state){
     float distance_max = ceil(state.nb_municipalities / (2*state.nb_districts));
     float min_nb_mun_per_district = floor(state.nb_municipalities / state.nb_districts);
     float division = pow(distance_max, 2) / min_nb_mun_per_district;
@@ -348,7 +348,7 @@ bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int r
     State current_state(municipalities_, rows,cols, nb_district, centers);
     State best_state(current_state);
     ShowState(current_state);
-    float treshold = validation_treshold(best_state);
+    float treshold = validation_threshold(best_state);
     int non_improving_iterations = 0;
     int iteration_counter = 0;
 
