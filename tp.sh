@@ -15,4 +15,7 @@ while getopts ":e:c:p" opt; do
   esac
 done
 
-python3 ./main.py --path "$path" --nb_districts "$nbDistricts" --print "$print"
+python3 ./main.py --path "$path" --nb_districts "$nbDistricts" --print_ "$print"
+
+
+

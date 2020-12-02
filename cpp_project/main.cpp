@@ -232,6 +232,16 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
     return state.distance_cost;
 }
 
+void print_solution(const State &state) {
+
+    for(int i = 0; i < state.nb_districts; i ++ ){
+        for(int j = 0; j < state.districts[i].municipalities.size(); j ++){
+            cout << state.districts[i].municipalities[j].x <<" " << state.districts[i].municipalities[j].y<< endl;
+        }
+    }
+
+}
+
 tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 
     // TODO: trouver une belle formule
