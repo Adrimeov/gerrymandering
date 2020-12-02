@@ -307,6 +307,16 @@ State Search_new_state(const State &current_state, int district_index, int munic
     }
     return best_state;
 }
+void print_solution(const State &state) {
+    for(int i = 0; i < state.nb_districts; i ++ ){
+        for(int j = 0; j < state.districts[i].municipalities.size(); j ++){
+            cout << state.districts[i].municipalities[j].y <<" " << state.districts[i].municipalities[j].x<<" ";
+        }
+        cout<<endl;
+    }
+    cout<<endl<<endl;;
+
+}
 
 bool validate_state(const State &state) {
     float distance_max = ceil((float)state.nb_municipalities / (2*(float)state.nb_districts));
