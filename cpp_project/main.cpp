@@ -526,7 +526,7 @@ State Votes_Local_Search(const State &initial_state, int max_non_improving_itera
 }
 
 void Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district,
-                  int max_non_improving_iterations, vector<vector<float>> centers,  bool print_) {
+                  int max_non_improving_iterations, const vector<vector<float>> &centers,  bool print_) {
 
     State initial_state(municipalities_, rows,cols, nb_district, centers);
 
@@ -534,6 +534,11 @@ void Local_Search(const vector<Municipality> &municipalities_, int rows, int col
     ShowState(initial_state);
 
     initial_state = Valid_State_Local_Search(initial_state, max_non_improving_iterations, print_);
+
+    if (!validate_state(initial_state)) {
+        cout << "invalid state" << endl;
+        return;
+    }
 
     cout << "-----Valid Districts State-----" << endl;
     ShowState(initial_state);
