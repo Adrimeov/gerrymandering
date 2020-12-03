@@ -71,6 +71,8 @@ struct State {
         municipalities = municipalities_;
         districts = vector<District>(nb_district);
         nb_districts = nb_district;
+        vote_cost = 0;
+        distance_cost = 0;
 
         initialize_state(centers);
         Setup_Coadjacency();
@@ -223,25 +225,28 @@ int update_vote_cost_after_swap(State &state, int district_idx_1, int district_i
     int vote_per_mun = 100;
 
     for (int index : indexes) {
-        District *district = &state.districts[index];
-        state.vote_cost -= district->vote_cost;
+        state.vote_cost -= state.districts[index].vote_cost;
 
-        int votes_per_district = vote_per_mun * district->municipalities.size();
+        int votes_per_district = vote_per_mun * state.districts[index].municipalities.size();
         int green_votes = 0;
 
-        for(const auto &mun: district->municipalities)
+        for(const auto &mun: state.districts[index].municipalities)
             green_votes += mun.votes;
 
         int votes_to_win = votes_per_district / 2 + 1;
 
-        if (green_votes > votes_to_win) {
-            district->vote_cost = green_votes - votes_to_win;
+        if (green_votes >= votes_to_win) {
+            state.districts[index].vote_cost = green_votes - votes_to_win;
         } else {
-            district->vote_cost = green_votes;
+            state.districts[index].vote_cost = green_votes;
         }
 
-        state.vote_cost += district->vote_cost;
+        int calisse = state.districts[index].vote_cost;
+
+
+        state.vote_cost += state.districts[index].vote_cost;
     }
+
     return state.vote_cost;
 }
 
@@ -403,7 +408,8 @@ bool validate_state(const State &state) {
 
 State Search_new_vote_state(const State &current_state, int district_index, int municipality_index) {
     State best_state(current_state);
-    best_state.vote_cost = numeric_limits<int>::max();
+    int best_score = numeric_limits<int>::max();
+
     for(int i = 0; i < current_state.nb_districts; i++) {
         if(i == district_index) {
             // Skipping swaps with municipalities from same district
@@ -413,8 +419,11 @@ State Search_new_vote_state(const State &current_state, int district_index, int 
         for (int j = 0; j < current_state.districts[i].municipalities.size(); j++) {
             State candidate = swap_municipalities(current_state, district_index, i, municipality_index, j);
             int candidate_cost = update_vote_cost_after_swap(candidate, district_index, i);
-            if (validate_state(candidate) and candidate_cost < best_state.vote_cost)
+
+            if (validate_state(candidate) and candidate_cost < best_score) {
+                best_score = candidate_cost;
                 best_state = candidate;
+            }
         }
     }
 
@@ -507,6 +516,9 @@ State Votes_Local_Search(const State &initial_state, int max_non_improving_itera
         if (current_state.vote_cost < best_state.vote_cost) {
             best_state = current_state;
             non_improving_iterations = 0;
+        }
+        if (current_state.vote_cost < 0) {
+            cout << "hmmm" << endl;
         }
     }
 
