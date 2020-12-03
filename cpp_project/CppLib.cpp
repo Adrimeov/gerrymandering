@@ -107,6 +107,49 @@ struct State {
     }
 
 
+    void initialize_state_1(vector<vector<float>> centers){
+        vector<int> available_distric;
+        vector<int> district_count = initialize_district_count();
+        for(int i = 0; i < this->nb_districts; i ++){
+            available_distric.push_back(i);
+        }
+
+        for(int mun_index = 0; mun_index < this->nb_municipalities; mun_index++){
+            float dist_max = numeric_limits<int>::max();
+            int district_index = -1;
+            for(int district_idx = 0; district_idx < this->nb_districts; district_idx++){
+                int dist_x = abs(this->municipalities[mun_index].x - centers[available_distric[district_idx]][0]);
+                int dist_y = abs(this->municipalities[mun_index].y - centers[available_distric[district_idx]][1]);
+                if(dist_y + dist_x < dist_max){
+                    dist_max = dist_x + dist_y;
+                    district_index = district_idx;
+                }
+
+            }
+            this->districts[available_distric[district_index]].municipalities.push_back(this->municipalities[mun_index]);
+            district_count[available_distric[district_index]] --;
+            if(district_count[available_distric[district_index]] == 0)
+                available_distric.erase(available_distric.begin() + district_index);
+        }
+
+
+    }
+    vector<int> initialize_district_count(){
+        float nb_municipality_min = floor(this->nb_municipalities / this->nb_districts);
+        float nb_municipality_max = ceil(this->nb_municipalities / this->nb_districts);
+        int reminder = this->nb_municipalities - (this->nb_districts * nb_municipality_min);
+        vector<int> distribution(this->nb_districts, nb_municipality_min);
+        for(int i = 0; i < this->nb_districts; i++){
+            if(reminder <= 0)
+                break;
+            if(distribution[i] < nb_municipality_max) {
+                distribution[i] += 1;
+                reminder -= 1;
+            }
+        }
+        return distribution;
+    }
+
     void initialize_state(vector<vector<float>> centers){
         vector<int> available_distric;
         int min_nb_mun_per_district = floor((float)this->nb_municipalities / this->nb_districts);
@@ -278,7 +321,7 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
 
 tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 
-    float wildcard_probability = 0.0;
+    float wildcard_probability = 0.1;
 
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
     uniform_real_distribution<float> proba(0.0, 1.0);
@@ -319,7 +362,7 @@ tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 State Search_new_state(const State &current_state, int district_index, int municipality_index) {
     State best_state(current_state);
     // TODO: tester avec et sans
-//    best_state.distance_cost = numeric_limits<int>::max();
+    best_state.distance_cost = numeric_limits<int>::max();
 //    best_state.distance_cost = current_state.distance_cost;
     for(int i = 0; i < current_state.nb_districts; i++) {
         if(i == district_index) {
@@ -361,7 +404,7 @@ bool validate_state(const State &state) {
 //                int distance = state.coadjacency_matrix[x][y];
 
                 if(distance > distance_max) {
-                    cout << "distance: " << distance << "distance max accepted: "<< distance_max <<endl;
+                    cout << "distance: " << distance << " distance max accepted: "<< distance_max <<endl;
                     cout << district.municipalities[i].x << " " << district.municipalities[i].y << endl;
                     cout << district.municipalities[j].x << " " <<  district.municipalities[j].y << endl;
                     cout <<"Outlier district: "<< district_num + 1 << endl;
