@@ -5,10 +5,12 @@ from cpp_project import CppLib
 import K_means_experiment as K_mean
 import numpy as np
 
+
 # (timeout 120s ./tp.sh -e ./exemplaires/10_10_0.txt -c 10) | python3 ./check_sol.py -e ./exemplaires/10_10_0.txt -c 10
+# 33.2284
 
-
-    max_improving = 100
+def launch_algo(path=None, nb_districts=0, print_=False):
+    max_improving = 1200
     x, y, municipalities = sample_reader.read_samples(path)
     centers = K_mean.compute_k_means_center(x, y, int(nb_districts))
     centers = np.round(np.array(centers))

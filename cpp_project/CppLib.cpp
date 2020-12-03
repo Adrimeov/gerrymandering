@@ -89,11 +89,32 @@ struct State {
 
         initialize_state(centers);
         Setup_Coadjacency();
-        initialize_state_cost(centers);
+        recalculate_centers();
+        initialize_state_cost();
         initialize_outlier_distance();
     };
 
+    void recalculate_centers(){
 
+        for(auto & district : this-> districts){
+            int mun_index = -1;
+            int distance_tot =  numeric_limits<int>::max();
+            for(int i = 0; i < district.municipalities.size() -1; i++){
+                int distance_tempo = 0;
+                for(int j = 0; j < district.municipalities.size(); j++){
+                    int distance_x = abs(district.municipalities[i].x - district.municipalities[j].x);
+                    int distance_y = abs(district.municipalities[i].y - district.municipalities[j].y);
+                    distance_tempo+= distance_x + distance_y;
+                }
+                if(distance_tot > distance_tempo){
+                    distance_tot = distance_tempo;
+                    mun_index = i;
+                }
+            }
+            district._center_x = district.municipalities[mun_index].x;
+            district._center_y = district.municipalities[mun_index].y;
+        }
+    }
     void initialize_outlier_distance(){
         for(auto & district : this->districts){
             float district_worst_distance = 0;
@@ -184,11 +205,11 @@ struct State {
         }
     }
 
-    void initialize_state_cost(vector<vector<float>> centers) {
-        for(int i = 0; i < this->nb_districts; i++){
-            this->districts[i]._center_x = centers[i][0];
-            this->districts[i]._center_y = centers[i][1];
-        }
+    void initialize_state_cost() {
+//        for(int i = 0; i < this->nb_districts; i++){
+//            this->districts[i]._center_x = centers[i][0];
+//            this->districts[i]._center_y = centers[i][1];
+//        }
 
         for(auto & district : this->districts){
             district.distance_cost = 0;
@@ -323,7 +344,7 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
 
 tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 
-    float wildcard_probability = 0.05;
+    float wildcard_probability = 0.5;
 
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
     uniform_real_distribution<float> proba(0.0, 1.0);
