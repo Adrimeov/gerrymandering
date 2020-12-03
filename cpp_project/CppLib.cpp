@@ -92,6 +92,8 @@ struct State {
         initialize_state_cost(centers);
         initialize_outlier_distance();
     };
+
+
     void initialize_outlier_distance(){
         for(auto & district : this->districts){
             float district_worst_distance = 0;
@@ -107,7 +109,7 @@ struct State {
     }
 
 
-    void initialize_state_1(vector<vector<float>> centers){
+    void initialize_state(vector<vector<float>> centers){
         vector<int> available_distric;
         vector<int> district_count = initialize_district_count();
         for(int i = 0; i < this->nb_districts; i ++){
@@ -150,7 +152,7 @@ struct State {
         return distribution;
     }
 
-    void initialize_state(vector<vector<float>> centers){
+    void initialize_state_1(vector<vector<float>> centers){
         vector<int> available_distric;
         int min_nb_mun_per_district = floor((float)this->nb_municipalities / this->nb_districts);
         cout<< "Min number on mun per district: "<<min_nb_mun_per_district<<endl;
@@ -321,7 +323,7 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
 
 tuple<int, int> find_district_swap(const State &state, int iteration_count) {
 
-    float wildcard_probability = 0.1;
+    float wildcard_probability = 0.05;
 
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
     uniform_real_distribution<float> proba(0.0, 1.0);
@@ -392,8 +394,10 @@ void print_solution(const State &state) {
 
 bool validate_state(const State &state) {
     float distance_max = ceil((float)state.nb_municipalities / (2*(float)state.nb_districts));
+    bool valid = true;
     int district_num = 0;
     for(auto & district : state.districts){
+
         for(int i = 0; i < district.municipalities.size() - 1; i++) {
             for(int j = i + 1; j < district.municipalities.size(); j++) {
                   int distance_x = abs(district.municipalities[i].x - district.municipalities[j].x);
@@ -404,19 +408,19 @@ bool validate_state(const State &state) {
 //                int distance = state.coadjacency_matrix[x][y];
 
                 if(distance > distance_max) {
-                    cout << "distance: " << distance << " distance max accepted: "<< distance_max <<endl;
-                    cout << district.municipalities[i].x << " " << district.municipalities[i].y << endl;
-                    cout << district.municipalities[j].x << " " <<  district.municipalities[j].y << endl;
-                    cout <<"Outlier district: "<< district_num + 1 << endl;
-                    return false;
+                    cout << " Distance: " << distance;
+                    cout <<" Outlier district: "<< district_num + 1;
+                    valid = false;
                 }
 
             }
         }
         district_num+=1;
     }
-    cout << "Valid!" << endl;
-    return true;
+    if(valid)
+        cout << "Valid!" << endl;
+    cout<<""<<endl;
+    return valid;
 }
 
 float validation_threshold(const State &state){
@@ -430,7 +434,7 @@ bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int r
     State current_state(municipalities_, rows,cols, nb_district, centers);
     State best_state(current_state);
     ShowState(current_state);
-    float treshold = validation_threshold(best_state);
+    float treshold = 60.0;
     int non_improving_iterations = 0;
     int iteration_counter = 0;
 
@@ -442,7 +446,6 @@ bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int r
         if (current_state.distance_cost < best_state.distance_cost) {
             best_state = current_state;
             non_improving_iterations = 0;
-            cout << "Treshold: "<< treshold << endl;
             cout << best_state.distance_cost << endl;
             if(best_state.distance_cost <= treshold) {
                 cout << "validation in progress.." << endl;

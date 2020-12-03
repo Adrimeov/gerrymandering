@@ -76,9 +76,32 @@ struct State {
 
         initialize_state(centers);
         Setup_Coadjacency();
-        initialize_state_cost(centers);
+        recalculate_centers();
+        initialize_state_cost();
         initialize_outlier_distance();
     };
+
+    void recalculate_centers(){
+
+        for(auto & district : this-> districts){
+            int mun_index = -1;
+            int distance_tot =  numeric_limits<int>::max();
+            for(int i = 0; i < district.municipalities.size() -1; i++){
+                int distance_tempo = 0;
+                for(int j = 0; j < district.municipalities.size(); j++){
+                    int distance_x = abs(district.municipalities[i].x - district.municipalities[j].x);
+                    int distance_y = abs(district.municipalities[i].y - district.municipalities[j].y);
+                    distance_tempo+= distance_x + distance_y;
+                }
+                if(distance_tot > distance_tempo){
+                    distance_tot = distance_tempo;
+                    mun_index = i;
+                }
+            }
+            district._center_x = district.municipalities[mun_index].x;
+            district._center_y = district.municipalities[mun_index].y;
+        }
+    }
 
     void initialize_outlier_distance(){
         for(auto & district : this->districts){
@@ -95,8 +118,8 @@ struct State {
     }
 
     vector<int> initialize_district_count(){
-        float nb_municipality_min = floor(this->nb_municipalities / this->nb_districts);
-        float nb_municipality_max = ceil(this->nb_municipalities / this->nb_districts);
+        float nb_municipality_min = floor((float)this->nb_municipalities / (float)this->nb_districts);
+        float nb_municipality_max = ceil((float)this->nb_municipalities / (float)this->nb_districts);
         int reminder = this->nb_municipalities - (this->nb_districts * nb_municipality_min);
         vector<int> distribution(this->nb_districts, nb_municipality_min);
         for(int i = 0; i < this->nb_districts; i++){
@@ -168,12 +191,12 @@ struct State {
 
         }
     }
-
-    void initialize_state_cost(vector<vector<float>> centers) {
-        for(int i = 0; i < this->nb_districts; i++){
-            this->districts[i]._center_x = centers[i][0];
-            this->districts[i]._center_y = centers[i][1];
-        }
+//    vector<vector<float>> centers
+    void initialize_state_cost() {
+//        for(int i = 0; i < this->nb_districts; i++){
+//            this->districts[i]._center_x = centers[i][0];
+//            this->districts[i]._center_y = centers[i][1];
+//        }
 
         for(auto & district : this->districts){
             district.distance_cost = 0;
