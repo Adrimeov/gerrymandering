@@ -1,6 +1,8 @@
 import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
+import pymetis
+
 
 
 def priority_matrix(dim_x, dim_y, municipalities_coordinates, max_distance):
@@ -76,7 +78,112 @@ def spiral_matrix_print(arr):
     return indices
 
 
+def generate_adjacency_matrix(nb_row, nb_column):
+    adjacency_list = [[] for i in range(nb_row * nb_column)]
+    for row_idx in range(nb_row):
+        for col_idx in range(nb_column):
+            coordinate_to_idx = (row_idx * nb_column + col_idx)
+            coordinate_to_idx_list = coordinate_to_idx
+            if row_idx == 0:
+                if col_idx == 0:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + nb_column)
+                elif col_idx == nb_column - 1:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + nb_column)
+                else:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + nb_column)
+            elif row_idx == nb_row - 1:
+                if col_idx == 0:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - nb_column)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + 1)
+                elif col_idx == nb_column - 1:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - nb_column)
+                else:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - nb_column)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + 1)
+            else:
+                if col_idx == 0:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - nb_column)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + nb_column)
+                elif col_idx == nb_column -1:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - nb_column)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + nb_column)
+                else:
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - nb_column)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx - 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + 1)
+                    adjacency_list[coordinate_to_idx_list].append(coordinate_to_idx + nb_column)
+
+    return adjacency_list
+
+
+def validate_solution(districts, n, k):
+    min_distance = np.ceil(n/(2*k))
+    min_nb_district = np.floor(n/k)
+    max_nb_district = np.ceil(n/k)
+    counter = 1
+    for district_idx in range(len(districts)):
+        if len(districts[district_idx]) > max_nb_district or len(districts[district_idx]) < min_nb_district:
+            print(len(districts[district_idx]))
+            print(district_idx)
+            print("not valid too much city.")
+            return 0
+        for municipality_1_idx in range(len(districts[district_idx]) - 1):
+            for municipality_2_idx in range(len(districts[district_idx])):
+                distance_x = abs(districts[district_idx][municipality_1_idx][0] - districts[district_idx][municipality_2_idx][0])
+                distance_y = abs(districts[district_idx][municipality_1_idx][1] - districts[district_idx][municipality_2_idx][1])
+                if distance_x + distance_y > min_distance:
+                    print("Actual distance: ", distance_x + distance_y, " Distance max accpeted: ", min_distance)
+                    print(district_idx)
+                    print("not valid; bust distance max.")
+                    return 0
+
+    print("Valid!")
+
+
+def reconstruct_matrix_from_label(labels, nb_labels, nb_rows, nb_columns, print_=False):
+    districts = [[] for i in range(nb_labels)]
+    matrix = np.zeros((nb_rows, nb_columns))
+    for label_idx in range(len(labels)):
+        row = label_idx // nb_columns
+        column = label_idx % nb_columns
+        matrix[row][column] = labels[label_idx]
+        districts[labels[label_idx]].append((row, column))
+    if print_:
+        print(matrix)
+    return districts
+
+
 if __name__ == "__main__":
-    test_arr = np.zeros((4,5))
-    indices = spiral_matrix_print(test_arr)
-    print(indices)
+    nb_rows = 6
+    nb_columns = 50
+    nb_district = 25
+    a = generate_adjacency_matrix(nb_rows, nb_columns)
+    b = np.arange(nb_columns*nb_rows).reshape(nb_rows, nb_columns)
+
+    b, c = pymetis.part_graph(nb_district, adjacency=a)
+    district = reconstruct_matrix_from_label(c, nb_district, nb_rows, nb_columns, print_=True)
+    validate_solution(district, nb_rows*nb_columns,nb_district)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
