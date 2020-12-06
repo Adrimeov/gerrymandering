@@ -16,7 +16,7 @@ class Direction(Enum):
     Y = 2
 
 
-def split_districts(sub_matrix, x_range, y_range, nb_districts, solver, districts=[], label_start=1):
+def split_districts(sub_matrix, x_range, y_range, nb_districts, solver=None, districts=[], label_start=1):
     x_length = x_range[1] - x_range[0] + 1
     y_length = y_range[1] - y_range[0] + 1
     n = x_length * y_length
@@ -30,14 +30,38 @@ def split_districts(sub_matrix, x_range, y_range, nb_districts, solver, district
 
     # No possible split found, we solve
     if len(ranges) == 0:
-        solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start)
+        solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k_min, k_max, label_start, solver)
         return
 
     for i, sub_range in enumerate(ranges):
         split_nb_districts, split_x_range, split_y_range = sub_range
-        split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts, label_start + i*split_nb_districts)
+        split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts, label_start=label_start + i*split_nb_districts)
 
-def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start):
+
+def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k_min, k_max, label_start, solver=None):
+    try:
+        # Solve with iteration
+        # TODO: return a lists of municipalitiy list (list of districts)
+        if verify_sub_matrix(x_range, y_range, direction, n, nb_districts):
+            iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start)
+        else:
+            raise ValueError("Sub_matrix cannot be solved manually")
+        # TODO: verify the validity of the solution
+        # TODO: If valid: append this list to the global list
+        # TODO: else, use provided solver
+    except:
+        # TODO: make sure the provided solver gives a valid solution
+        rows, cols, nb_districts = prepare_solver_parameters(x_range, y_range, nb_districts)
+        districts = solver(rows, cols, nb_districts)
+
+
+def prepare_solver_parameters(x_range, y_range, nb_districts):
+    rows = x_range[1] - x_range[0] + 1
+    cols = y_range[1] - y_range[0] - 1
+    return rows, cols, nb_districts
+
+
+def iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start):
     left_municipalities = n
     nb_max_mun = 0
 
@@ -76,6 +100,31 @@ def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, k_min, k_max, l
                 nb_min_mun -= 1
                 district_label += 1
                 municipalities_placed = 0
+
+
+def verify_sub_matrix(x_range, y_range, direction, n, nb_districts):
+    is_valid = True
+
+    max_distance = ceil(n / (2 * nb_districts))
+
+    if direction == Direction.X:
+        outer_range = x_range
+        inner_range = y_range
+    else:
+        outer_range = y_range
+        inner_range = x_range
+
+    district_height = ceil((outer_range[1] - outer_range[0] + 1) / nb_districts)
+
+    for district in range(1, nb_districts + 1):
+        top_index = (outer_range[0] + (district - 1) * (district_height - 1), inner_range[1])
+        bottom_index = (outer_range[0] + district * (district_height - 1), inner_range[0])
+        distance = abs(top_index[1] - bottom_index[1]) + abs(top_index[0] - bottom_index[0])
+
+        if distance > max_distance:
+            return False
+
+    return is_valid
 
 
 def get_max_split(axis_size, nb_districts):
@@ -192,10 +241,11 @@ def initialize_districts(rows, cols, nb_districts, solver):
     matrix = np.zeros((rows, cols))
     split_districts(matrix, row_range, col_range, nb_districts, solver)
 
+
 if __name__ == "__main__":
-    rows = (0, 5)
-    cols = (0, 49)
-    nb_districts = 40
+    rows = (0, 9)
+    cols = (0, 9)
+    nb_districts = 7
 
     n = rows[1] * cols[1]
 
@@ -204,7 +254,7 @@ if __name__ == "__main__":
     municipalities = np.zeros((rows[1] + 1, cols[1] + 1))
 
     start = time()
-    split_districts(municipalities, rows, cols, nb_districts)
+    split_districts(municipalities, rows, cols, nb_districts, solver=None)
     print(f"Total time: {time() - start}")
 
     show_municipalities(municipalities)
