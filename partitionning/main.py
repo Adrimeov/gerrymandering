@@ -4,6 +4,7 @@ import sys
 from time import time
 from enum import Enum
 from math import ceil, floor, gcd
+from cpp_project import CppLib
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -30,29 +31,25 @@ def split_districts(sub_matrix, x_range, y_range, nb_districts, solver=None, dis
 
     # No possible split found, we solve
     if len(ranges) == 0:
-        solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k_min, k_max, label_start, solver)
+        districts += solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k_min, k_max, label_start, solver)
         return
 
     for i, sub_range in enumerate(ranges):
         split_nb_districts, split_x_range, split_y_range = sub_range
-        split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts, label_start=label_start + i*split_nb_districts)
+        split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts, districts=districts, label_start=label_start + i*split_nb_districts)
 
 
 def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k_min, k_max, label_start, solver=None):
     try:
         # Solve with iteration
-        # TODO: return a lists of municipalitiy list (list of districts)
         if verify_sub_matrix(x_range, y_range, direction, n, nb_districts):
-            iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start)
+            return iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start)
         else:
             raise ValueError("Sub_matrix cannot be solved manually")
-        # TODO: verify the validity of the solution
-        # TODO: If valid: append this list to the global list
-        # TODO: else, use provided solver
     except:
         # TODO: make sure the provided solver gives a valid solution
         rows, cols, nb_districts = prepare_solver_parameters(x_range, y_range, nb_districts)
-        districts = solver(rows, cols, nb_districts)
+        return solver(rows, cols, nb_districts)
 
 
 def prepare_solver_parameters(x_range, y_range, nb_districts):
@@ -83,12 +80,17 @@ def iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, lab
     municipalities_placed = 0
     district_label = label_start
 
+    districts = []
+    municipalities = []
+
     for i in range(outer_range[0], outer_range[1] + 1):
         for j in range(inner_range[0], inner_range[1] + 1):
             if Direction == Direction.X:
                 sub_matrix[i, j] = district_label
+                municipalities.append(CppLib.Municipality(i, j, 0))
             else:
                 sub_matrix[j, i] = district_label
+                municipalities.append(CppLib.Municipality(j, i, 0))
 
             municipalities_placed += 1
 
@@ -96,10 +98,16 @@ def iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, lab
                 nb_max_mun -= 1
                 district_label += 1
                 municipalities_placed = 0
+                districts.append(municipalities)
+                municipalities = []
             elif nb_max_mun == 0 and municipalities_placed % k_min == 0:
                 nb_min_mun -= 1
                 district_label += 1
                 municipalities_placed = 0
+                districts.append(municipalities)
+                municipalities = []
+
+    return districts
 
 
 def verify_sub_matrix(x_range, y_range, direction, n, nb_districts):
@@ -245,7 +253,7 @@ def initialize_districts(rows, cols, nb_districts, solver):
 if __name__ == "__main__":
     rows = (0, 9)
     cols = (0, 9)
-    nb_districts = 7
+    nb_districts = 5
 
     n = rows[1] * cols[1]
 
@@ -253,8 +261,10 @@ if __name__ == "__main__":
 
     municipalities = np.zeros((rows[1] + 1, cols[1] + 1))
 
+    districts = []
+
     start = time()
-    split_districts(municipalities, rows, cols, nb_districts, solver=None)
+    split_districts(municipalities, rows, cols, nb_districts,  districts=districts ,solver=None)
     print(f"Total time: {time() - start}")
 
     show_municipalities(municipalities)
