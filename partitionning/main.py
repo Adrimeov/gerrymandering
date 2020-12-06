@@ -250,6 +250,14 @@ def initialize_districts(rows, cols, nb_districts, solver):
     split_districts(matrix, row_range, col_range, nb_districts, solver)
 
 
+def experiment_municipalities_show(sub_matrix, districts):
+    for i, district in enumerate(districts):
+        for mun in district:
+            x = mun.get_x()
+            y = mun.get_y()
+            sub_matrix[x, y] = i + 1
+
+
 if __name__ == "__main__":
     rows = (0, 9)
     cols = (0, 9)
@@ -264,7 +272,7 @@ if __name__ == "__main__":
     districts = []
 
     start = time()
-    split_districts(municipalities, rows, cols, nb_districts,  districts=districts ,solver=None)
+    split_districts(municipalities, rows, cols, nb_districts,  districts=districts, solver=None)
     print(f"Total time: {time() - start}")
 
     show_municipalities(municipalities)
