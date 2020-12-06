@@ -16,7 +16,7 @@ class Direction(Enum):
     Y = 2
 
 
-def split_districts(sub_matrix, x_range, y_range, nb_districts, label_start=1):
+def split_districts(sub_matrix, x_range, y_range, nb_districts, solver, districts=[], label_start=1):
     x_length = x_range[1] - x_range[0] + 1
     y_length = y_range[1] - y_range[0] + 1
     n = x_length * y_length
@@ -36,7 +36,6 @@ def split_districts(sub_matrix, x_range, y_range, nb_districts, label_start=1):
     for i, sub_range in enumerate(ranges):
         split_nb_districts, split_x_range, split_y_range = sub_range
         split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts, label_start + i*split_nb_districts)
-
 
 def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start):
     left_municipalities = n
@@ -183,6 +182,15 @@ def show_municipalities(municipalities):
             print(f"{int(mun)} ", end="")
         print("")
 
+
+def initialize_districts(rows, cols, nb_districts, solver):
+    row_range = (0, rows - 1)
+    col_range = (0, cols - 1)
+    n = rows * cols
+
+    assert n / nb_districts <= MAX_MUN_DISTICTS_RATIO
+    matrix = np.zeros((rows, cols))
+    split_districts(matrix, row_range, col_range, nb_districts, solver)
 
 if __name__ == "__main__":
     rows = (0, 5)
