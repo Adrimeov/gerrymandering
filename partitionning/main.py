@@ -8,6 +8,7 @@ from math import ceil, floor, gcd
 np.set_printoptions(threshold=sys.maxsize)
 
 MAX_MUN_DISTICTS_RATIO = 20
+SMALL_DIMENSION = 10
 
 
 class Direction(Enum):
@@ -25,18 +26,12 @@ def split_districts(sub_matrix, x_range, y_range, nb_districts, label_start=1):
 
     direction = get_split_axis(x_length, y_length)
 
-    # TODO: find better way to determine if sub_matrix is solvable
-    if nb_districts <= 3:
+    ranges = get_new_ranges(x_range, y_range, direction, nb_districts)
+
+    # No possible split found, we solve
+    if len(ranges) == 0:
         solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, k_min, k_max, label_start)
         return
-
-    # nb_districts_l, x_range_l, y_range_l, nb_districts_r, x_range_r, y_range_r =
-    # get_new_ranges(x_range, y_range, direction, nb_districts)
-    #
-    # split_districts(sub_matrix, x_range_l, y_range_l, nb_districts_l, label_start)
-    # split_districts(sub_matrix, x_range_r, y_range_r, nb_districts_r, label_start + nb_districts_r)
-
-    ranges = get_new_ranges(x_range, y_range, direction, nb_districts)
 
     for i, sub_range in enumerate(ranges):
         split_nb_districts, split_x_range, split_y_range = sub_range
@@ -105,23 +100,63 @@ def get_split_axis(x_length, y_length):
         return Direction.Y
 
 
+def get_asymetric_ranges(x_range, y_range, split_direction, nb_districts, axis_size):
+    ranges = []
+
+    nb_districts_1 = ceil(nb_districts / 2)
+    nb_districts_2 = floor(nb_districts / 2)
+
+    axis_size_1 = axis_size * (nb_districts_1 / nb_districts)
+    axis_size_2 = axis_size * (nb_districts_2 / nb_districts)
+
+    while not float.is_integer(axis_size_1) or not float.is_integer(axis_size_2):
+        nb_districts_1 += 1
+        nb_districts_2 -= 1
+        axis_size_1 = axis_size * (nb_districts_1 / nb_districts)
+        axis_size_2 = axis_size * (nb_districts_2 / nb_districts)
+
+    assert axis_size_1 + axis_size_2 == axis_size
+
+    axis_size_1 = int(axis_size_1)
+
+    if nb_districts_1 == nb_districts:
+        return []
+
+    if split_direction == Direction.X:
+        split_x_range_1 = (x_range[0], x_range[0] + axis_size_1 - 1)
+        split_x_range_2 = (x_range[0] + axis_size_1, x_range[1])
+        split_y_range_1 = y_range
+        split_y_range_2 = y_range
+    else:
+        split_x_range_1 = x_range
+        split_x_range_2 = x_range
+        split_y_range_1 = (y_range[0], y_range[0] + axis_size_1 - 1)
+        split_y_range_2 = (y_range[0] + axis_size_1, y_range[1])
+
+    ranges.append((nb_districts_1, split_x_range_1, split_y_range_1))
+    ranges.append((nb_districts_2, split_x_range_2, split_y_range_2))
+
+    return ranges
+
+
 def get_new_ranges(x_range, y_range, split_direction, nb_districts):
     if split_direction == Direction.X:
         axis_size = x_range[1] - x_range[0] + 1
     else:
         axis_size = y_range[1] - y_range[0] + 1
 
-    # nb_districts_l = ceil(nb_districts / 2)
-    # nb_districts_r = nb_districts // 2
-    #
-    # ratio = nb_districts_r / nb_districts_l
+    ranges = []
 
-    # TODO: take care of odd sizes
+    if axis_size <= SMALL_DIMENSION and nb_districts % 2 != 0:
+        ranges = get_asymetric_ranges(x_range, y_range, split_direction, nb_districts, axis_size)
+
+    if len(ranges) > 0:
+        return ranges
+
     splits = get_max_split(axis_size, nb_districts)
 
     if splits == 1:
-        return
-
+        return []
 
     new_axis_size = axis_size // splits
     split_nb_districts = nb_districts // splits
