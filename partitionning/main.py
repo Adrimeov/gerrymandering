@@ -247,7 +247,9 @@ def initialize_districts(rows, cols, nb_districts, solver):
 
     assert n / nb_districts <= MAX_MUN_DISTICTS_RATIO
     matrix = np.zeros((rows, cols))
-    split_districts(matrix, row_range, col_range, nb_districts, solver)
+    districts=[]
+    split_districts(matrix, row_range, col_range, nb_districts,  districts=districts, solver=solver)
+    return districts
 
 
 def experiment_municipalities_show(sub_matrix, districts):
@@ -259,20 +261,14 @@ def experiment_municipalities_show(sub_matrix, districts):
 
 
 if __name__ == "__main__":
-    rows = (0, 9)
-    cols = (0, 9)
+    rows = 10
+    cols = 10
     nb_districts = 5
 
-    n = rows[1] * cols[1]
-
-    assert n / nb_districts <= MAX_MUN_DISTICTS_RATIO
-
-    municipalities = np.zeros((rows[1] + 1, cols[1] + 1))
-
-    districts = []
-
     start = time()
-    split_districts(municipalities, rows, cols, nb_districts,  districts=districts, solver=None)
+    districts = initialize_districts(rows, cols, nb_districts, solver=None)
     print(f"Total time: {time() - start}")
 
-    show_municipalities(municipalities)
+    matrix = np.zeros((rows, cols))
+    experiment_municipalities_show(matrix, districts)
+    show_municipalities(matrix)
