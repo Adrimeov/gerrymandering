@@ -95,8 +95,6 @@ def get_max_split(axis_size, nb_districts):
     while axis_size % max_split != 0 or nb_districts % max_split != 0:
         max_split -= 1
 
-    assert max_split != 1
-
     return max_split
 
 
@@ -120,6 +118,11 @@ def get_new_ranges(x_range, y_range, split_direction, nb_districts):
 
     # TODO: take care of odd sizes
     splits = get_max_split(axis_size, nb_districts)
+
+    if splits == 1:
+        return
+
+
     new_axis_size = axis_size // splits
     split_nb_districts = nb_districts // splits
 
@@ -147,9 +150,9 @@ def show_municipalities(municipalities):
 
 
 if __name__ == "__main__":
-    rows = (0, 99)
-    cols = (0, 99)
-    nb_districts = 500
+    rows = (0, 5)
+    cols = (0, 49)
+    nb_districts = 40
 
     n = rows[1] * cols[1]
 
