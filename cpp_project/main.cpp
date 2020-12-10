@@ -5,6 +5,7 @@
 #include <cmath>
 #include <chrono>
 #include <tuple>
+#include <random>
 
 using namespace std;
 
@@ -21,6 +22,7 @@ struct Municipality {
     }
     Municipality(int _x, int _y, int _votes): x(_x), y(_y), votes(_votes), coadjacency_index(0) {};
 };
+
 struct District {
     float distance_cost;
     int vote_cost;
@@ -69,11 +71,13 @@ struct State {
         municipalities = municipalities_;
         districts = vector<District>(nb_district);
         nb_districts = nb_district;
-        // TODO: maybe shuffle les municipalites
+        vote_cost = 0;
+        distance_cost = 0;
 
         initialize_state(centers);
         Setup_Coadjacency();
         initialize_state_cost(centers);
+        initialize_vote_cost();
     };
 
     void initialize_state(vector<vector<float>> centers){
@@ -129,6 +133,29 @@ struct State {
         }
     }
 
+    void initialize_vote_cost() {
+        vote_cost = 0;
+        int vote_per_mun = 100;
+
+        for(auto &district: districts) {
+            int votes_per_district = vote_per_mun * district.municipalities.size();
+            int green_votes = 0;
+
+            for(int i = 0; i < district.municipalities.size(); i++)
+                green_votes += district.municipalities[i].votes;
+
+            int votes_to_win = votes_per_district / 2 + 1;
+
+            if (green_votes > votes_to_win) {
+                district.vote_cost = green_votes - votes_to_win;
+            } else {
+                district.vote_cost = green_votes;
+            }
+
+            vote_cost += district.vote_cost;
+        }
+    }
+
     void Setup_Coadjacency() {
         coadjacency_matrix = new int*[nb_municipalities];
 
@@ -162,7 +189,7 @@ void ShowState(const State &state) {
     }
 
 }
-//    ou 3,4: 0 - 3,5: 1
+
 State swap_municipalities(State current_state, int dist_idx_1, int dist_idx_2, int mun_idx_1, int mun_idx_2){
     State new_state = State(current_state);
     // TODO essayer de swap les ref, pas les objets.
@@ -171,6 +198,7 @@ State swap_municipalities(State current_state, int dist_idx_1, int dist_idx_2, i
     new_state.districts[dist_idx_2].municipalities[mun_idx_2] = municipality_tempo;
     return new_state;
 }
+
 float update_new_cost_after_swap(State &state, int district_idx_1, int district_idx_2, int mun_idx_1, int mun_idx_2){
     assert(district_idx_1 != district_idx_2);
     int indexes[2]{district_idx_1, district_idx_2};
@@ -189,6 +217,37 @@ float update_new_cost_after_swap(State &state, int district_idx_1, int district_
         state.distance_cost += state.districts[indexes[i]].distance_cost;
     }
     return state.distance_cost;
+}
+
+int update_vote_cost_after_swap(State &state, int district_idx_1, int district_idx_2) {
+    assert(district_idx_1 != district_idx_2);
+    int indexes[2]{district_idx_1, district_idx_2};
+    int vote_per_mun = 100;
+
+    for (int index : indexes) {
+        state.vote_cost -= state.districts[index].vote_cost;
+
+        int votes_per_district = vote_per_mun * state.districts[index].municipalities.size();
+        int green_votes = 0;
+
+        for(const auto &mun: state.districts[index].municipalities)
+            green_votes += mun.votes;
+
+        int votes_to_win = votes_per_district / 2 + 1;
+
+        if (green_votes >= votes_to_win) {
+            state.districts[index].vote_cost = green_votes - votes_to_win;
+        } else {
+            state.districts[index].vote_cost = green_votes;
+        }
+
+        int calisse = state.districts[index].vote_cost;
+
+
+        state.vote_cost += state.districts[index].vote_cost;
+    }
+
+    return state.vote_cost;
 }
 
 int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_idx_2, int mun_idx_1, int mun_idx_2){
@@ -283,6 +342,30 @@ tuple<int, int> find_district_swap(const State &state, int iteration_count) {
     return make_tuple(worst_district_index, worst_mun_index);
 }
 
+tuple<int, int> find_vote_swap(const State &state) {
+    float worst_cost = 0;
+
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    uniform_int_distribution<int> random_district_dist(0.0, state.nb_districts - 1);
+    default_random_engine generator(seed);
+    int district_index = random_district_dist(generator);
+
+    worst_cost = 0;
+    int worst_mun_index = 0;
+
+    for(int i = 0; i < state.districts[district_index].municipalities.size(); i++){
+        float distance_x = abs(state.districts[district_index].municipalities[i].x - state.districts[district_index]._center_x);
+        float distance_y = abs(state.districts[district_index].municipalities[i].y - state.districts[district_index]._center_y);
+
+        if(worst_cost < (distance_y + distance_x)) {
+            worst_cost = distance_x + distance_y;
+            worst_mun_index = i;
+        }
+    }
+
+    return make_tuple(district_index, worst_mun_index);
+}
+
 State Search_new_state(const State &current_state, int district_index, int municipality_index) {
     State best_state(current_state);
     // TODO: tester avec et sans
@@ -301,7 +384,7 @@ State Search_new_state(const State &current_state, int district_index, int munic
                 best_state = candidate;
         }
     }
-//    ou 3,4: 0 - 3,5: 1
+
     return best_state;
 }
 
@@ -320,31 +403,44 @@ bool validate_state(const State &state) {
             }
         }
     }
-    cout << "Valid!" << endl;
     return true;
 }
 
-float validation_threshold(const State &state){
-    float d_max = floor((float)state.nb_municipalities / (2*(float)state.nb_districts));
-    float nb_mun_min = floor((float)state.nb_municipalities / ((float)state.nb_districts));
+State Search_new_vote_state(const State &current_state, int district_index, int municipality_index) {
+    State best_state(current_state);
+    int best_score = numeric_limits<int>::max();
 
-    if ((int)d_max % 2 == 1)
-        d_max++;
+    for(int i = 0; i < current_state.nb_districts; i++) {
+        if(i == district_index) {
+            // Skipping swaps with municipalities from same district
+            continue;
+        }
 
-    float r_max = d_max / 2;
-    float total_cost = 0;
-    float nb_add = 0;
+        for (int j = 0; j < current_state.districts[i].municipalities.size(); j++) {
+            State candidate = swap_municipalities(current_state, district_index, i, municipality_index, j);
+            int candidate_cost = update_vote_cost_after_swap(candidate, district_index, i);
 
-    while (r_max >= 1) {
-        float cost = pow(r_max, 2) / (r_max * 4);
-        total_cost += cost;
-        r_max--;
-        nb_add++;
+            if (validate_state(candidate) and candidate_cost < best_score) {
+                best_score = candidate_cost;
+                best_state = candidate;
+            }
+        }
     }
 
-    total_cost /= nb_add;
+    return best_state;
+}
 
-    return total_cost;
+void Initialize_Random_Votes(vector<Municipality> &municipalities) {
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    uniform_int_distribution<int> random_votes_dist(0.0, 100);
+    default_random_engine generator(seed);
+
+    for (auto &municipality: municipalities)
+        municipality.votes = random_votes_dist(generator);
+}
+
+float validation_threshold(const State &state){
+    return state.nb_municipalities;
 }
 
 bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations, vector<vector<float>> centers,  bool print_) {
@@ -379,14 +475,82 @@ bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int r
         }
     }
 
-//    ShowState(best_state);
     return validate_state(best_state);
 }
-void test_initialize(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, vector<vector<float>> centers){
-    State state_test(municipalities_, rows, cols, nb_district, centers);
-    ShowState(state_test);
+
+State Valid_State_Local_Search(const State &initial_state, int max_non_improving_iterations,  bool print_) {
+    State current_state(initial_state);
+    State best_state(current_state);
+    float threshold = validation_threshold(best_state);
+    int non_improving_iterations = 0;
+    int iteration_counter = 0;
+
+    cout<<"_-----------Initial-------------_"<<endl;
+    ShowState(current_state);
+
+    while (non_improving_iterations < max_non_improving_iterations){
+        non_improving_iterations++;
+        tuple<int, int> random_indexes = find_district_swap(current_state, ++iteration_counter);
+        current_state = Search_new_state(current_state, get<0>(random_indexes), get<1>(random_indexes));
+        if (current_state.distance_cost < best_state.distance_cost) {
+            best_state = current_state;
+            non_improving_iterations = 0;
+            if(best_state.distance_cost <= threshold)
+                if(validate_state(best_state))
+                    return best_state;
+        }
+    }
+
+    return best_state;
 }
 
+State Votes_Local_Search(const State &initial_state, int max_non_improving_iterations) {
+    State current_state(initial_state);
+    State best_state(current_state);
+    int non_improving_iterations = 0;
+
+    while (non_improving_iterations < max_non_improving_iterations) {
+        non_improving_iterations++;
+        tuple<int, int> random_indexes = find_vote_swap(current_state);
+        current_state = Search_new_vote_state(current_state, get<0>(random_indexes), get<1>(random_indexes));
+        if (current_state.vote_cost < best_state.vote_cost) {
+            best_state = current_state;
+            non_improving_iterations = 0;
+        }
+        if (current_state.vote_cost < 0) {
+            cout << "hmmm" << endl;
+        }
+    }
+
+    return best_state;
+}
+
+void Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district,
+                  int max_non_improving_iterations, const vector<vector<float>> &centers,  bool print_) {
+
+    State initial_state(municipalities_, rows,cols, nb_district, centers);
+
+    cout << "-----Initial State-----" << endl;
+    ShowState(initial_state);
+
+    initial_state = Valid_State_Local_Search(initial_state, max_non_improving_iterations, print_);
+
+    if (!validate_state(initial_state)) {
+        cout << "invalid state" << endl;
+        return;
+    }
+
+    cout << "-----Valid Districts State-----" << endl;
+    ShowState(initial_state);
+    initial_state.initialize_vote_cost();
+    cout << "Vote cost: " << initial_state.vote_cost << endl;
+
+    State final_state = Votes_Local_Search(initial_state, max_non_improving_iterations);
+
+    cout << "-----Vote Optimised States-----" << endl;
+    ShowState(final_state);
+    cout << "Vote cost: " << final_state.vote_cost << endl;
+}
 
 int main() {
     vector<vector<float>> centers_10_10 { vector<float>{8, 2}, vector<float>{4 , 7}, vector<float>{2, 2},vector<float>{8, 7}
@@ -416,7 +580,6 @@ int main() {
     vector<vector<float>> threshold_centers { vector<float>{8, 2}, vector<float>{4 , 7}, vector<float>{2, 2},vector<float>{8, 7}};
     State threshold_state_test = State(municipalities_1, 8, 8, 4, threshold_centers);
     float threshold = validation_threshold(test_state_1);
-    assert(threshold == 420.0);
 //    assert(test_state_1.nb_municipalities == nb_col * nb_row);
 
 //    for (int i = 0; i < test_state_1.nb_municipalities; i++) {
@@ -445,14 +608,16 @@ int main() {
 
     // test 10 10 avec 6 districts
 
-    State test_state = State(municipalities_1, nb_row, nb_col, nb_district, centers_10_10);
+    Initialize_Random_Votes(municipalities_1);
+    Local_Search(municipalities_1, nb_row, nb_col, nb_district,  100, centers_10_10, false);
+
     //
 
-    bool found = false;
-    while(!found){
-        cout << "oooooooooooooooooooooooooooooooooooo" << endl;
-        found = Valid_State_Local_Search(test_state.municipalities, nb_row, nb_col, nb_district, 100, centers_10_10, false);
-    }
+//    bool found = false;
+//    while(!found){
+//        cout << "oooooooooooooooooooooooooooooooooooo" << endl;
+//        found = Valid_State_Local_Search(test_state.municipalities, nb_row, nb_col, nb_district, 100, centers_10_10, false);
+//    }
 
     return 0;
 }

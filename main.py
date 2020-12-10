@@ -8,11 +8,13 @@ import numpy as np
 # (timeout 120s ./tp.sh -e ./exemplaires/10_10_0.txt -c 10) | python3 ./check_sol.py -e ./exemplaires/10_10_0.txt -c 10
 
 
+def launch_algo(path, nb_districts, print_):
     max_improving = 100
     x, y, municipalities = sample_reader.read_samples(path)
     centers = K_mean.compute_k_means_center(x, y, int(nb_districts))
     centers = np.round(np.array(centers))
     CppLib.Valid_State_Local_Search(municipalities, x, y, int(nb_districts), max_improving, centers, bool(print_))
+    # CppLib.Local_Search(municipalities, x, y, int(nb_districts), max_improving, centers, bool(print_))
 
 
 if __name__ == "__main__":
