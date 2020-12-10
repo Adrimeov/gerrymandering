@@ -86,7 +86,7 @@ def iterated_solve(sub_matrix, x_range, y_range, direction, n, k_min, k_max, lab
 
     for i in range(outer_range[0], outer_range[1] + 1):
         for j in range(inner_range[0], inner_range[1] + 1):
-            if Direction == Direction.X:
+            if direction == Direction.X:
                 sub_matrix[i, j] = district_label
                 municipalities.append(CppLib.Municipality(i, j, 0))
             else:
@@ -262,9 +262,9 @@ def experiment_municipalities_show(sub_matrix, districts):
 
 
 if __name__ == "__main__":
-    rows = 36
-    cols = 60
-    nb_districts = 300
+    rows = 10
+    cols = 10
+    nb_districts = 5
 
     start = time()
     districts = initialize_districts(rows, cols, nb_districts, solver=solve_local_search)
