@@ -162,9 +162,9 @@ def reconstruct_matrix_from_label(labels, nb_labels, nb_rows, nb_columns, print_
 
 
 if __name__ == "__main__":
-    nb_rows = 6
-    nb_columns = 50
-    nb_district = 25
+    nb_rows = 100
+    nb_columns = 10
+    nb_district = 12
     a = generate_adjacency_matrix(nb_rows, nb_columns)
     b = np.arange(nb_columns*nb_rows).reshape(nb_rows, nb_columns)
 

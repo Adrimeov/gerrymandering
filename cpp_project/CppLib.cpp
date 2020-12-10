@@ -456,7 +456,20 @@ float validation_threshold(const State &state){
     return state.nb_municipalities;
 }
 
-bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations, vector<vector<float>> centers,  bool print_) {
+vector<vector<Municipality>> build_n_return_solution(const State &final_state){
+    vector<vector<Municipality>> final_solution;
+
+    for(int i = 0; i < final_state.nb_districts; i++){
+        vector<Municipality> new_vector;
+        final_solution.push_back(new_vector);
+        for(int j = 0; j < final_state.districts[i].municipalities.size(); j++){
+            final_solution[i].push_back(final_state.districts[i].municipalities[j]);
+        }
+    }
+    return final_solution;
+}
+
+vector<vector<Municipality>> Valid_State_Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, int max_non_improving_iterations, vector<vector<float>> centers,  bool print_) {
     State current_state(municipalities_, rows,cols, nb_district, centers);
     State best_state(current_state);
     float treshold = validation_threshold(best_state);
@@ -487,8 +500,11 @@ bool Valid_State_Local_Search(const vector<Municipality> &municipalities_, int r
             ShowState(current_state);
         }
     }
+    if(validate_state(best_state))
+        return build_n_return_solution(best_state);
 
-    return validate_state(best_state);
+    vector<vector<Municipality>> to_return;
+    return to_return;
 }
 
 State Valid_State_Search(const State &initial_state, int max_non_improving_iterations,  bool print_) {
