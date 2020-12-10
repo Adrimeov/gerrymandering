@@ -5,6 +5,7 @@ from time import time
 from enum import Enum
 from math import ceil, floor, gcd
 from cpp_project import CppLib
+from partitionning.local_search_solver import solve_local_search
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -36,7 +37,8 @@ def split_districts(sub_matrix, x_range, y_range, nb_districts, solver=None, dis
 
     for i, sub_range in enumerate(ranges):
         split_nb_districts, split_x_range, split_y_range = sub_range
-        split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts, districts=districts, label_start=label_start + i*split_nb_districts)
+        split_districts(sub_matrix, split_x_range, split_y_range, split_nb_districts,
+                        solver=solver, districts=districts, label_start=label_start + i*split_nb_districts)
 
 
 def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k_min, k_max, label_start, solver=None):
@@ -47,14 +49,13 @@ def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k
         else:
             raise ValueError("Sub_matrix cannot be solved manually")
     except:
-        # TODO: make sure the provided solver gives a valid solution
         rows, cols, nb_districts = prepare_solver_parameters(x_range, y_range, nb_districts)
         return solver(rows, cols, nb_districts)
 
 
 def prepare_solver_parameters(x_range, y_range, nb_districts):
     rows = x_range[1] - x_range[0] + 1
-    cols = y_range[1] - y_range[0] - 1
+    cols = y_range[1] - y_range[0] + 1
     return rows, cols, nb_districts
 
 
@@ -261,12 +262,12 @@ def experiment_municipalities_show(sub_matrix, districts):
 
 
 if __name__ == "__main__":
-    rows = 10
-    cols = 10
-    nb_districts = 5
+    rows = 36
+    cols = 60
+    nb_districts = 300
 
     start = time()
-    districts = initialize_districts(rows, cols, nb_districts, solver=None)
+    districts = initialize_districts(rows, cols, nb_districts, solver=solve_local_search)
     print(f"Total time: {time() - start}")
 
     matrix = np.zeros((rows, cols))
