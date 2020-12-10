@@ -159,11 +159,7 @@ struct State {
 
             int votes_to_win = votes_per_district / 2 + 1;
 
-            if (green_votes > votes_to_win) {
-                district.vote_cost = green_votes - votes_to_win;
-            } else {
-                district.vote_cost = green_votes;
-            }
+            district.vote_cost = abs(green_votes - votes_to_win);
 
             vote_cost += district.vote_cost;
         }
@@ -247,16 +243,7 @@ int update_vote_cost_after_swap(State &state, int district_idx_1, int district_i
             green_votes += mun.votes;
 
         int votes_to_win = votes_per_district / 2 + 1;
-
-        if (green_votes >= votes_to_win) {
-            state.districts[index].vote_cost = green_votes - votes_to_win;
-        } else {
-            state.districts[index].vote_cost = green_votes;
-        }
-
-        int calisse = state.districts[index].vote_cost;
-
-
+        state.districts[index].vote_cost = abs(green_votes - votes_to_win);
         state.vote_cost += state.districts[index].vote_cost;
     }
 
@@ -571,7 +558,6 @@ void test_initialize(const vector<Municipality> &municipalities_, int rows, int 
     State state_test(municipalities_, rows, cols, nb_district, centers);
     ShowState(state_test);
 }
-
 
 
 PYBIND11_MODULE(CppLib, m) {
