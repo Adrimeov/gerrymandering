@@ -17,7 +17,6 @@ def launch_algo(path, nb_districts, print_):
     # centers = K_mean.compute_k_means_center(x, y, int(nb_districts))
     # centers = np.round(np.array(centers))
     districts = initialize_districts(rows, cols, int(nb_districts), solve_local_search)
-    print(len(districts))
     # CppLib.Valid_State_Local_Search(municipalities, x, y, int(nb_districts), max_improving, centers, bool(print_))
     # CppLib.Local_Search(municipalities, x, y, int(nb_districts), max_improving, centers, bool(print_))
 

@@ -478,7 +478,7 @@ vector<vector<Municipality>> Valid_State_Local_Search(const vector<Municipality>
             ShowState(best_state);
             if(best_state.distance_cost <= treshold)
                 if(validate_state(best_state)) {
-                    return true;
+                    return build_n_return_solution(best_state);
                 }
 
         }
@@ -487,8 +487,6 @@ vector<vector<Municipality>> Valid_State_Local_Search(const vector<Municipality>
             ShowState(current_state);
         }
     }
-    if(validate_state(best_state))
-        return build_n_return_solution(best_state);
 
     vector<vector<Municipality>> to_return;
     return to_return;

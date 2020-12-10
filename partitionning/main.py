@@ -50,7 +50,14 @@ def solve_sub_matrix(sub_matrix, x_range, y_range, direction, n, nb_districts, k
             raise ValueError("Sub_matrix cannot be solved manually")
     except:
         rows, cols, nb_districts = prepare_solver_parameters(x_range, y_range, nb_districts)
-        return solver(rows, cols, nb_districts)
+        districts = solver(rows, cols, nb_districts)
+
+        for district in districts:
+            for mun in district:
+                mun.set_x(mun.get_x() + x_range[0])
+                mun.set_y(mun.get_y() + y_range[0])
+
+        return districts
 
 
 def prepare_solver_parameters(x_range, y_range, nb_districts):
@@ -250,6 +257,7 @@ def initialize_districts(rows, cols, nb_districts, solver):
     matrix = np.zeros((rows, cols))
     districts=[]
     split_districts(matrix, row_range, col_range, nb_districts,  districts=districts, solver=solver)
+
     return districts
 
 
