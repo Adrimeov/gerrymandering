@@ -311,12 +311,13 @@ int update_new_cost_after_swap_1(State &state, int district_idx_1, int district_
 }
 
 void print_solution(const State &state) {
-
     for(int i = 0; i < state.nb_districts; i ++ ){
         for(int j = 0; j < state.districts[i].municipalities.size(); j ++){
-            cout << state.districts[i].municipalities[j].x << " " << state.districts[i].municipalities[j].y << endl;
+            cout << state.districts[i].municipalities[j].y <<" " << state.districts[i].municipalities[j].x<<" ";
         }
+        cout<<endl;
     }
+    cout<<endl<<endl;;
 
 }
 
