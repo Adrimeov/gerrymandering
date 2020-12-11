@@ -93,10 +93,33 @@ struct State {
         initialize_vote_cost();
     };
 
+    State(const vector<vector<Municipality>> &districts, int rows, int cols, int nb_district, vector<vector<float>> centers): nb_rows(rows), nb_cols(cols), distance_cost(0), vote_cost(0) {
+//        nb_municipalities = municipalities_.size();
+        municipalities = vector<Municipality>();
+        this->districts = vector<District>(nb_district);
+        nb_districts = nb_district;
+        vote_cost = 0;
+        distance_cost = 0;
+
+        for (int i = 0; i < districts.size(); i++) {
+            this->districts[i].municipalities = districts[i];
+            this->districts[i]._center_x = centers[i][0];
+            this->districts[i]._center_y = centers[i][1];
+            municipalities.insert(municipalities.begin(), districts[i].begin(), districts[i].end());
+        }
+
+        nb_municipalities = municipalities.size();
+        Setup_Coadjacency();
+        initialize_state_cost(centers);
+        initialize_vote_cost();
+
+        cout << vote_cost << endl;
+
+    }
+
     void initialize_state(vector<vector<float>> centers){
         vector<int> available_distric;
         int min_nb_mun_per_district = floor((float)this->nb_municipalities / this->nb_districts);
-        cout<<min_nb_mun_per_district<<endl;
         for(int i = 0; i < this->nb_districts; i ++){
             available_distric.push_back(i);
         }
@@ -463,9 +486,6 @@ vector<vector<Municipality>> Valid_State_Local_Search(const vector<Municipality>
     int non_improving_iterations = 0;
     int iteration_counter = 0;
 
-    cout<<"_-----------Initial-------------_"<<endl;
-    ShowState(current_state);
-
     while (non_improving_iterations < max_non_improving_iterations){
         non_improving_iterations++;
         tuple<int, int> random_indexes = find_district_swap(current_state, ++iteration_counter);
@@ -475,16 +495,11 @@ vector<vector<Municipality>> Valid_State_Local_Search(const vector<Municipality>
             non_improving_iterations = 0;
             cout << "Treshold: "<< treshold << endl;
             cout << best_state.distance_cost << endl;
-            ShowState(best_state);
             if(best_state.distance_cost <= treshold)
                 if(validate_state(best_state)) {
                     return build_n_return_solution(best_state);
                 }
 
-        }
-        if (non_improving_iterations== max_non_improving_iterations - 1) {
-            cout << "last" << endl;
-            ShowState(current_state);
         }
     }
 
@@ -515,7 +530,6 @@ State Valid_State_Search(const State &initial_state, int max_non_improving_itera
             if(best_state.distance_cost <= threshold)
                 if(validate_state(best_state)) {
                     return best_state;
-                    cout << "valid!" << endl;
                 }
         }
     }
@@ -536,23 +550,17 @@ State Votes_Local_Search(const State &initial_state, int max_non_improving_itera
             best_state = current_state;
             non_improving_iterations = 0;
         }
-        if (current_state.vote_cost < 0) {
-            cout << "hmmm" << endl;
-        }
     }
 
     return best_state;
 }
 
-void Local_Search(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district,
+void Optimise_Votes(const vector<vector<Municipality>> &municipalities_, int rows, int cols, int nb_district,
                   int max_non_improving_iterations, const vector<vector<float>> &centers,  bool print_) {
 
     State initial_state(municipalities_, rows,cols, nb_district, centers);
 
-    cout << "-----Initial State-----" << endl;
     ShowState(initial_state);
-
-    initial_state = Valid_State_Search(initial_state, max_non_improving_iterations, print_);
 
     if (!validate_state(initial_state)) {
         cout << "invalid state" << endl;
@@ -590,5 +598,5 @@ PYBIND11_MODULE(CppLib, m) {
 
     m.def("Valid_State_Local_Search", &Valid_State_Local_Search, "Builds a valid state using local search.");
     m.def("test_initialize", &test_initialize, "Tests centers");
-    m.def("Local_Search", &Local_Search, "launch local search");
+    m.def("Optimise_Votes", &Optimise_Votes, "launch local search");
 }

@@ -18,20 +18,24 @@ def launch_algo(path, nb_districts, print_):
 
     assert len(districts) == nb_districts
 
-    initialise_votes(districts, vote_map)
-    print("nice")
-    # TODO: launch votes local search
+    centers = []
 
-
-def initialise_votes(districts, vote_map):
-    for district in districts:
+    for i, district in enumerate(districts):
+        center_x = 0
+        center_y = 0
         for mun in district:
             x = mun.get_x()
             y = mun.get_y()
-
             votes = int(vote_map[x, y])
-
             mun.set_votes(votes)
+            center_x += x
+            center_y += y
+        center_x /= len(district)
+        center_y /= len(district)
+        centers.append((center_x, center_y))
+
+    CppLib.Optimise_Votes(districts, rows, cols, nb_districts, 500, centers, bool(print_))
+
 
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
