@@ -7,16 +7,21 @@
 #     HAOUAS, Mohammed Najib - 25 novembre 2020
 #
 #   RÉSUMÉ DES CHANGEMENTS :
-#     11/26/2020 - Disponibilité initiale
-#     11/26/2020 - Inversion des dimensions indiquées dans les instances pour suivre celle de generator.py
+#     12/11/2020 - Ajout de l'argument -p dans les exemples de cette présente documentation
+#     12/7/2020  - Correction du calcul de la norme L1
+#     12/4/2020  - Introduction d'un argument facultatif pour l'affichage de la Machine Readable Zone, maintenant désactivée par défaut. 
+#     12/4/2020  - Ajout de l'option -r/--do-transpose pour lire correctement les solutions des équipes qui ont considéré une convention inverse à celle d'algèbre linéaire.
+#                  Cette option est pour débogage immédiat et ne sera pas utilisée lors de la correction. Assurez-vous de mettre à jour votre affichage avant la remise.
+#     11/26/2020 - Inversion des dimensions indiquées dans les instances pour suivre celle de generator.py.
+#     11/26/2020 - Disponibilité initiale.
 #
 #   USAGE :
 #     Ce script vérifie le stdout passé en pipe pour conformité avec les exigences du TP3 tel que rédigé à la session A20.
 #     Ce même script sera utilisé par les correcteurs pour juger la qualité des programmes développés avec l'appel suivant :
-#       $ (timeout 180s ./tp.sh -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS; exit 0) | ./check_sol.py -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS [-s FICHIER_SORTIE]
+#       $ (timeout 180s ./tp.sh -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS -p; exit 0) | ./check_sol.py -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS [-s FICHIER_SORTIE]
 #     où :
 #       * "timeout 180s" interrompt, après 3 minutes (180 sec), l'exécution de...
-#       * "./tp.sh -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS" tel que...
+#       * "./tp.sh -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS -p" tel que...
 #       * "FICHIER_EXEMPLAIRE" est l'adresse de l'exemplaire à résoudre et...
 #       * "NB_CIRCONSCRIPTIONS" est la variable m dans le problème, ie le nombre visé de circonscriptions.
 #       * "; exit 0" remplace le code de sortie de timeout pour permettre à...
@@ -25,23 +30,23 @@
 #       * admet, de façon facultative, un paramètre "-s" avec le chemin/nom du fichier "FICHIER_SORTIE" où on désire sauvergarder le contenu en pipe.
 #
 #   EXEMPLES D'USAGE :
-#     $ (timeout 180s ./tp.sh -e 3_3_0.txt -c 3; exit 0) | ./check_sol.py -e 3_3_0.txt -c 3 -s sortie.out
+#     $ (timeout 180s ./tp.sh -e 3_3_0.txt -c 3 -p; exit 0) | ./check_sol.py -e 3_3_0.txt -c 3 -s sortie.out
 #       cette commande exécute tp.sh pour un max de 180s et passe son affichage à ce présent script, appelé avec les mêmes paramètres pour vérifier le résultat.
 #       L'affichage est par ailleurs sauvegardé dans un fichier texte "sortie.out" dans le même dossier.
 #       Sauvegarder cet affichage de tp.sh permet de le revérifier ultérieurement, sans avoir à réexécuter le programme, en utilisant par exemple la commande ci-dessous.
 #
 #     $ cat sortie.out | ./check_sol.py -e 3_3_0.txt -c 3
 #       sortie.out contient l'affichage d'une exécution antérieure. L'utilisation de "cat" permet de vérifier la solution qu'il contient par ce présent script.
-#       Prendre garde à utiliser les même paramètres avec ce script que ceux qui ont été employés lors de la génération de "sortie.out".
+#       Prendre garde à utiliser les mêmes paramètres avec ce script que ceux qui ont été employés lors de la génération de "sortie.out".
 #     
-#     $ ./tp.sh -e 3_3_0.txt -c 3 > sortie.out
+#     $ ./tp.sh -e 3_3_0.txt -c 3 -p > sortie.out
 #     $ cat sortie.out | ./check_sol.py -e 3_3_0.txt -c 3
-#       Alternativement, il est possible de lancer vos programmes dans premier temps et d'enregistrer leur sortie avec ">"...
+#       Alternativement, il est possible de lancer vos programmes dans un premier temps et d'enregistrer leur sortie avec ">"...
 #       pour ensuite les vérifier plus tard avec la deuxième commande.
 #
 #   ATTENTION:
 #     Pour que la commande :
-#       $ (timeout 180s ./tp.sh -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS; exit 0) | ./check_sol.py -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS [-s FICHIER_SORTIE]
+#       $ (timeout 180s ./tp.sh -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS -p; exit 0) | ./check_sol.py -e FICHIER_EXEMPLAIRE -c NB_CIRCONSCRIPTIONS [-s FICHIER_SORTIE]
 #     prenne en compte toutes vos solutions, il est INDISPENSABLE de flush votre stdout (ie, l'affichage standard de votre programme) À CHAQUE FOIS qu'une solution est trouvée.
 #     Pour ce faire, après chaque affichage d'une solution améliorante:
 #       * pour python 3: appelez sys.stdout.flush() ou spécifiez l'argument flush=True dans print().
@@ -50,7 +55,7 @@
 #       * pour Java : System.out flush automatiquement à chaque saut de ligne ou appelez System.out.flush().
 #
 #     Il est nécessaire de rendre ce script exécutable en utilisant chmod +x
-#     Python 3.5 ou ultérieur exigé pour lancer ce script.
+#     Python 3.5 ou ultérieur recommandé pour lancer ce script.
 
 
 import sys
@@ -86,7 +91,7 @@ def is_solution_format_valid(raw_solution):
     return bool(re.match(target_pattern, raw_solution))
 
 
-def parse_solution(raw_solution):
+def parse_solution(raw_solution, do_transpose):
     solution_data = []
     single_solution = []
 
@@ -101,6 +106,8 @@ def parse_solution(raw_solution):
         else:
             raw_district = [int(x) for x in line_contents]
             single_solution.append([raw_district[x:x+2] for x in range(0, len(raw_district), 2)])
+            if do_transpose:
+                single_solution[-1] = [x[::-1] for x in single_solution[-1]]
 
     if single_solution:
         solution_data.append(single_solution)
@@ -113,7 +120,7 @@ def check_inner_district_distances(solutions, n, m):
         for (district, district_index) in zip(solution, range(len(solution))):
             for precinct1_index in range(len(district) - 1):
                 for precinct2_index in range(precinct1_index + 1, len(district)):
-                    if abs((district[precinct1_index][0] - district[precinct2_index][0]) + (district[precinct1_index][1] - district[precinct2_index][1])) > math.ceil(n/2/m):
+                    if (abs(district[precinct1_index][0] - district[precinct2_index][0]) + abs(district[precinct1_index][1] - district[precinct2_index][1])) > math.ceil(n/2/m):
                         return (solution_index, district_index, precinct1_index, precinct2_index)
 
     return 0
@@ -179,11 +186,17 @@ if __name__ == '__main__':
                         help="Représente l'exemplaire correspondant à la solution étudiée", \
                         action='store', required=True, metavar='FICHIER_EXEMPLAIRE')
     parser.add_argument("-c", "--nb-circonscriptions", \
-                        help="Le nombre de circonscriptions (m) visé par la solution fournie", \
+                        help="Représente le nombre de circonscriptions (m) visé par la solution fournie", \
                         action='store', required=True, metavar='NB_CIRCONSCRIPTIONS', type=int)
     parser.add_argument("-s", "--sortie", \
                         help="Si indiqué, écrire stdin (ie la sortie de votre programme tel que piped) dans un fichier du nom indiqué", \
                         action='store', required=False, metavar='FICHIER_SORTIE')
+    parser.add_argument("-r", "--do-transpose", \
+                        help="Si utilisé, considérer la transposée de la solution fournie", \
+                        action='store_true', required=False)
+    parser.add_argument("-z", "--disp-mrz", \
+                        help="Si utilisé, affiche une Machine-Readable Zone pour permettre l'automatisation de la collecte de données", \
+                        action='store_true', required=False)
     args = parser.parse_args()
 
     # Store pipe
@@ -198,7 +211,7 @@ if __name__ == '__main__':
     except:
         print("Attention : impossible de sauvegarder l'affichage en pipe. Vérifiez les permissions d'écriture. Sauvegarde ignorée.")
     
-    # Check if format is as expected, ie an even number of space-separated integers on every line 
+    # Check whether format is as expected, ie an even number of space-separated integers on every line 
     if not is_solution_format_valid(piped_content):
         print("Erreur : les solutions fournies en pipe à stdin ont un format non valide. Revoyez la convention discutée dans l'énoncé.", file=sys.stderr)
         print("A reçu :", file=sys.stderr)
@@ -219,7 +232,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Structure piped solution in memory
-    resolution_data = parse_solution(piped_content)
+    resolution_data = parse_solution(piped_content, args.do_transpose)
     
     # Check solutions' consistency
     consistency_result = check_consistency(resolution_data, instance_data[0], instance_data[1], args.nb_circonscriptions)
@@ -258,11 +271,12 @@ if __name__ == '__main__':
     objective, vote_proportions = compute_objective(resolution_data, instance_data[2], instance_data[0], instance_data[1], args.nb_circonscriptions)
     print("OK : la valeur de l'objectif de la dernière (ie, meilleure) solution fournie est de " + str(objective) + ".\n")
     print("n = " + str(instance_data[0]) + "*" + str(instance_data[1]) + " = " + str(instance_data[0]*instance_data[1]))
-    print("m = ", args.nb_circonscriptions)
+    print("m =", args.nb_circonscriptions)
     print("Nombre de solutions reçues : " + str(len(resolution_data)))
     if len(vote_proportions) < 15:
         print("Proportions des voix pour les verts :", vote_proportions)
 
-    # Machine readable format to facilitate automatic logging
-    print("\nCSV Machine Readable Format:")
-    print(objective, instance_data[0]*instance_data[1], args.nb_circonscriptions, args.exemplaire, ','.join(["{:.3f}".format(x) for x in vote_proportions]), sep=',')
+    # Machine readable zone to facilitate automatic logging
+    if args.disp_mrz:
+        print("\nCSV Machine Readable Format:")
+        print(objective, instance_data[0]*instance_data[1], args.nb_circonscriptions, args.exemplaire, ','.join(["{:.3f}".format(x) for x in vote_proportions]), sep=',')

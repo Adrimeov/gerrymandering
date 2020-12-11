@@ -1,8 +1,7 @@
 import argparse
 import sys
 import sample_reader
-import K_means_experiment as K_mean
-import numpy as np
+import signal
 
 from cpp_project import CppLib
 from partitionning.main import initialize_districts
@@ -11,7 +10,8 @@ from partitionning.local_search_solver import solve_local_search
 # (timeout 120s ./tp.sh -e ./exemplaires/10_10_0.txt -c 10) | python3 ./check_sol.py -e ./exemplaires/10_10_0.txt -c 10
 
 
-def launch_algo(path, nb_districts, print_):
+
+def launch_algo(path=None, nb_districts=None, print_=True):
     nb_districts = int(nb_districts)
     rows, cols, municipalities, vote_map = sample_reader.read_samples(path)
     districts = initialize_districts(rows, cols, nb_districts, solve_local_search)
@@ -34,7 +34,12 @@ def launch_algo(path, nb_districts, print_):
         center_y /= len(district)
         centers.append((center_x, center_y))
 
-    CppLib.Optimise_Votes(districts, rows, cols, nb_districts, 500, centers, bool(print_))
+    solver = CppLib.Solver()
+
+    try :
+        solver.Optimise_Votes(districts, rows, cols, nb_districts, 500, centers, bool(print_))
+    except:
+        print("")
 
 
 if __name__ == "__main__":
