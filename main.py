@@ -36,8 +36,13 @@ def launch_algo(path=None, nb_districts=None, print_=True):
 
     solver = CppLib.Solver()
 
-    try :
-        solver.Optimise_Votes(districts, rows, cols, nb_districts, 500, centers, bool(print_))
+    print_solution = False
+
+    if print_ == "True":
+        print_solution = True
+
+    try:
+        solver.Optimise_Votes(districts, rows, cols, nb_districts, 500, centers, print_solution)
     except:
         print("")
 
