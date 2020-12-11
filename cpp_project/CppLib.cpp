@@ -94,7 +94,6 @@ struct State {
     };
 
     State(const vector<vector<Municipality>> &districts, int rows, int cols, int nb_district, vector<vector<float>> centers): nb_rows(rows), nb_cols(cols), distance_cost(0), vote_cost(0) {
-//        nb_municipalities = municipalities_.size();
         municipalities = vector<Municipality>();
         this->districts = vector<District>(nb_district);
         nb_districts = nb_district;
@@ -112,9 +111,6 @@ struct State {
         Setup_Coadjacency();
         initialize_state_cost(centers);
         initialize_vote_cost();
-
-        cout << vote_cost << endl;
-
     }
 
     void initialize_state(vector<vector<float>> centers){
@@ -318,7 +314,7 @@ void print_solution(const State &state) {
 
     for(int i = 0; i < state.nb_districts; i ++ ){
         for(int j = 0; j < state.districts[i].municipalities.size(); j ++){
-            cout << state.districts[i].municipalities[j].x <<" " << state.districts[i].municipalities[j].y<< endl;
+            cout << state.districts[i].municipalities[j].x << " " << state.districts[i].municipalities[j].y << endl;
         }
     }
 
@@ -420,15 +416,9 @@ bool validate_state(const State &state) {
                 int distance_x = abs(district.municipalities[i].x - district.municipalities[j].x);
                 int distance_y = abs(district.municipalities[i].y - district.municipalities[j].y);
                 int distance = distance_x + distance_y;
-//                int x = district.municipalities[i].x * state.nb_cols + district.municipalities[i].y;
-//                int y = district.municipalities[j].x * state.nb_cols + district.municipalities[j].y;
-//                int distance = state.coadjacency_matrix[x][y];
+
 
                 if(distance > distance_max) {
-                    cout << "distance: " << distance << "distance max accepted: "<< distance_max <<endl;
-                    cout << district.municipalities[i].x << " " << district.municipalities[i].y << endl;
-                    cout << district.municipalities[j].x << " " <<  district.municipalities[j].y << endl;
-                    cout <<"Outlier district: "<< district_num + 1 << endl;
                     return false;
                 }
 
@@ -436,7 +426,6 @@ bool validate_state(const State &state) {
         }
         district_num+=1;
     }
-    cout << "Valid!" << endl;
     return true;
 }
 
@@ -504,8 +493,6 @@ vector<vector<Municipality>> Valid_State_Local_Search(const vector<Municipality>
         if (current_state.distance_cost < best_state.distance_cost) {
             best_state = current_state;
             non_improving_iterations = 0;
-            cout << "Treshold: "<< treshold << endl;
-            cout << best_state.distance_cost << endl;
             if(best_state.distance_cost <= treshold)
                 if(validate_state(best_state)) {
                     return build_n_return_solution(best_state);
@@ -527,9 +514,6 @@ State Valid_State_Search(const State &initial_state, int max_non_improving_itera
     float threshold = validation_threshold(best_state);
     int non_improving_iterations = 0;
     int iteration_counter = 0;
-
-    cout<<"_-----------Initial-------------_"<<endl;
-    ShowState(current_state);
 
     while (non_improving_iterations < max_non_improving_iterations){
         non_improving_iterations++;
@@ -560,6 +544,7 @@ State Votes_Local_Search(const State &initial_state, int max_non_improving_itera
         if (current_state.vote_cost < best_state.vote_cost) {
             best_state = current_state;
             non_improving_iterations = 0;
+            print_solution(best_state);
         }
     }
 
@@ -571,23 +556,16 @@ void Optimise_Votes(const vector<vector<Municipality>> &municipalities_, int row
 
     State initial_state(municipalities_, rows,cols, nb_district, centers);
 
-    ShowState(initial_state);
-
     if (!validate_state(initial_state)) {
         cout << "invalid state" << endl;
         return;
     }
 
-    cout << "-----Valid Districts State-----" << endl;
-    ShowState(initial_state);
     initial_state.initialize_vote_cost();
-    cout << "Vote cost: " << initial_state.vote_cost << endl;
+    print_solution(initial_state);
 
     State final_state = Votes_Local_Search(initial_state, max_non_improving_iterations);
-
-    cout << "-----Vote Optimised States-----" << endl;
-    ShowState(final_state);
-    cout << "Vote cost: " << final_state.vote_cost << endl;
+    print_solution(final_state);
 }
 
 void test_initialize(const vector<Municipality> &municipalities_, int rows, int cols, int nb_district, vector<vector<float>> centers){
