@@ -8,7 +8,7 @@ while getopts ":e:c:p" opt; do
     ;;
     c) nbDistricts="$OPTARG"
     ;;
-    p) print="False"
+    p) print="True"
     ;;
     \?) echo "Invalid option -$OPTARG" >&2
     ;;
