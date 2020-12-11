@@ -9,9 +9,9 @@ def solve_local_search(rows, cols, nb_districts):
 
     centers = k_means.compute_k_means_center(rows, cols, int(nb_districts))
     centers = np.round(np.array(centers))
-    is_valid = CppLib.Valid_State_Local_Search(municipalities, rows, cols, int(nb_districts), 100, centers, False)
+    districts = CppLib.Valid_State_Local_Search(municipalities, rows, cols, int(nb_districts), 100, centers, False)
 
-    return []
+    return districts
 
 
 def prepare_municipalities(rows, cols):

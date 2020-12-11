@@ -12,15 +12,26 @@ from partitionning.local_search_solver import solve_local_search
 
 
 def launch_algo(path, nb_districts, print_):
-    # max_improving = 100
-    rows, cols, municipalities = sample_reader.read_samples(path)
-    # centers = K_mean.compute_k_means_center(x, y, int(nb_districts))
-    # centers = np.round(np.array(centers))
-    districts = initialize_districts(rows, cols, int(nb_districts), solve_local_search)
-    print(len(districts))
-    # CppLib.Valid_State_Local_Search(municipalities, x, y, int(nb_districts), max_improving, centers, bool(print_))
-    # CppLib.Local_Search(municipalities, x, y, int(nb_districts), max_improving, centers, bool(print_))
+    nb_districts = int(nb_districts)
+    rows, cols, municipalities, vote_map = sample_reader.read_samples(path)
+    districts = initialize_districts(rows, cols, nb_districts, solve_local_search)
 
+    assert len(districts) == nb_districts
+
+    initialise_votes(districts, vote_map)
+    print("nice")
+    # TODO: launch votes local search
+
+
+def initialise_votes(districts, vote_map):
+    for district in districts:
+        for mun in district:
+            x = mun.get_x()
+            y = mun.get_y()
+
+            votes = int(vote_map[x, y])
+
+            mun.set_votes(votes)
 
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
