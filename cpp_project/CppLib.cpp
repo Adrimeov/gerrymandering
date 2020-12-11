@@ -413,19 +413,30 @@ State Search_new_state(const State &current_state, int district_index, int munic
 
 bool validate_state(const State &state) {
     float distance_max = ceil((float)state.nb_municipalities / (2*(float)state.nb_districts));
+    int district_num = 0;
     for(auto & district : state.districts){
         for(int i = 0; i < district.municipalities.size() - 1; i++) {
             for(int j = i + 1; j < district.municipalities.size(); j++) {
-                int x = district.municipalities[i].x * state.nb_cols + district.municipalities[i].y;
-                int y = district.municipalities[j].x * state.nb_cols + district.municipalities[j].y;
-                int distance = state.coadjacency_matrix[x][y];
+                int distance_x = abs(district.municipalities[i].x - district.municipalities[j].x);
+                int distance_y = abs(district.municipalities[i].y - district.municipalities[j].y);
+                int distance = distance_x + distance_y;
+//                int x = district.municipalities[i].x * state.nb_cols + district.municipalities[i].y;
+//                int y = district.municipalities[j].x * state.nb_cols + district.municipalities[j].y;
+//                int distance = state.coadjacency_matrix[x][y];
+
                 if(distance > distance_max) {
+                    cout << "distance: " << distance << "distance max accepted: "<< distance_max <<endl;
+                    cout << district.municipalities[i].x << " " << district.municipalities[i].y << endl;
+                    cout << district.municipalities[j].x << " " <<  district.municipalities[j].y << endl;
+                    cout <<"Outlier district: "<< district_num + 1 << endl;
                     return false;
                 }
 
             }
         }
+        district_num+=1;
     }
+    cout << "Valid!" << endl;
     return true;
 }
 
